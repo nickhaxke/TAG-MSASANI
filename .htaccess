@@ -1,0 +1,9 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /kanisa/church-cms/
+
+    # If the request is not already targeting public/, redirect there
+    RewriteCond %{REQUEST_URI} !^/kanisa/church-cms/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
