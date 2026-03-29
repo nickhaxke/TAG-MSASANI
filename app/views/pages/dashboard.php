@@ -16,7 +16,6 @@ $statExpenses = (float) ($stats['expenses'] ?? 0);
 </style>
 
 <div class="db-root flex flex-col xl:overflow-hidden">
-
     <!-- Main 50/50 grid -->
     <div id="dashboard-grid" class="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-2 gap-4 xl:overflow-hidden">
 

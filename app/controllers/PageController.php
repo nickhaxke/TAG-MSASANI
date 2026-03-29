@@ -37,11 +37,13 @@ final class PageController
         )->fetchColumn();
         $events = (int) $this->pdo->query("SELECT COUNT(*) FROM `events` WHERE start_datetime >= NOW() AND status IN ('planned','ongoing')")->fetchColumn();
         $groups = (int) $this->pdo->query("SELECT COUNT(*) FROM `groups`")->fetchColumn();
+        $themeVerse = $this->resolveThemeVerse();
 
         Response::view('pages/dashboard.php', [
             'title' => 'TAG MSASANI Dashboard',
             'page'  => 'dashboard',
             'stats' => compact('members', 'income', 'expenses', 'events', 'groups'),
+            'themeVerse' => $themeVerse,
         ]);
     }
 
@@ -51,6 +53,7 @@ final class PageController
             'title' => 'Event Details',
             'page' => 'events',
             'eventId' => $eventId,
+            'themeVerse' => $this->resolveThemeVerse(),
         ]);
     }
 
@@ -77,6 +80,38 @@ final class PageController
         Response::view('pages/' . $module . '.php', [
             'title' => $titles[$module] ?? ucfirst($module),
             'page'  => $module,
+            'themeVerse' => $this->resolveThemeVerse(),
         ]);
+    }
+
+    private function resolveThemeVerse(): array
+    {
+        $themeVerse = [
+            'reference' => '1 Wakorintho 14:40',
+            'verse' => 'Mambo yote na yatendeke kwa uzuri na kwa utaratibu.',
+        ];
+
+        try {
+            $verseStmt = $this->pdo->query(
+                "SELECT verse_reference, verse_text
+                 FROM theme_verses
+                 WHERE is_active = 1
+                   AND (start_date IS NULL OR start_date <= CURRENT_DATE)
+                   AND (end_date IS NULL OR end_date >= CURRENT_DATE)
+                 ORDER BY RAND()
+                 LIMIT 1"
+            );
+            $row = $verseStmt ? $verseStmt->fetch() : false;
+            if ($row && !empty($row['verse_text'])) {
+                $themeVerse = [
+                    'reference' => (string) ($row['verse_reference'] ?? ''),
+                    'verse' => (string) $row['verse_text'],
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Keep fallback verse when migration has not yet been applied.
+        }
+
+        return $themeVerse;
     }
 }

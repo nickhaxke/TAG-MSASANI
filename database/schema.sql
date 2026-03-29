@@ -475,6 +475,21 @@ CREATE TABLE maintenance_logs (
   INDEX idx_maintenance_date (maintenance_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE theme_verses (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  verse_reference VARCHAR(120) NOT NULL,
+  verse_text TEXT NOT NULL,
+  translation VARCHAR(60) NOT NULL DEFAULT 'SWAHILI',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  display_weight INT UNSIGNED NOT NULL DEFAULT 1,
+  start_date DATE NULL,
+  end_date DATE NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_theme_verses_active (is_active),
+  INDEX idx_theme_verses_dates (start_date, end_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE sms_logs (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   recipient_type ENUM('member', 'group', 'custom') NOT NULL,

@@ -6,6 +6,8 @@
 
 $user = $_SESSION['user'] ?? null;
 $B = $baseUrl; // shorthand for links
+$themeVerseRef = trim((string)($themeVerse['reference'] ?? '1 Wakorintho 14:40'));
+$themeVerseText = trim((string)($themeVerse['verse'] ?? 'Mambo yote na yatendeke kwa uzuri na kwa utaratibu.'));
 
 $menu = [
     'dashboard'     => ['label' => 'Dashboard',     'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', 'href' => '/'],
@@ -82,7 +84,10 @@ $menu = [
         <div class="px-5 py-4">
             <div class="rounded-2xl bg-white/10 border border-white/15 px-4 py-3 text-white/90 text-sm">
                 <p class="text-xs uppercase tracking-widest text-glory-200">Theme Verse</p>
-                <p class="mt-1 italic">"Let all things be done decently and in order."</p>
+                <p class="mt-1 italic">"<?= htmlspecialchars($themeVerseText, ENT_QUOTES, 'UTF-8') ?>"</p>
+                <?php if ($themeVerseRef !== ''): ?>
+                    <p class="mt-1 text-[11px] text-glory-100 font-semibold"><?= htmlspecialchars($themeVerseRef, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
             </div>
         </div>
 

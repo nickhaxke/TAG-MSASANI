@@ -38,6 +38,7 @@ A full Core PHP + MySQL Church Management System tailored for Tanzanian churches
 2. Import SQL:
    - source database/schema.sql
    - source database/sample_data.sql
+   - source database/migrations/2026_03_29_001_create_theme_verses.sql
 3. Create local config from template and update DB credentials if needed:
    - copy app/config.example.php to app/config.php
    - then edit app/config.php
