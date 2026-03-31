@@ -80,14 +80,15 @@ $statExpenses = (float) ($stats['expenses'] ?? 0);
         <aside id="dashboard-insights" class="min-h-0 flex flex-col gap-3 xl:overflow-hidden">
 
             <!-- Card 1: Upcoming Events -->
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex-[1.3] min-h-0 flex flex-col">
-                <div class="flex items-center gap-2.5 mb-2">
-                    <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                        <svg class="w-4.5 h-4.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-3 py-2 flex-none flex flex-col">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center">
+                        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
-                    <h3 class="text-base font-heading font-bold text-gray-800">Upcoming Events</h3>
+                    <h3 class="text-xs font-heading font-bold text-gray-800">Upcoming Events</h3>
                 </div>
-                <div id="upcoming-list" class="flex-1 min-h-0 overflow-y-auto space-y-2"></div>
+                <!-- fixed height = 1 row visible, scroll for more -->
+                <div id="upcoming-list" class="overflow-y-auto space-y-1" style="max-height:32px"></div>
             </div>
 
             <!-- Card 2: Last Sunday Summary -->
@@ -420,7 +421,8 @@ function renderCalendar() {
 }
 
 function renderUpcoming() {
-    const list = (calendarState.insights.upcoming || []).slice(0, calendarState.ui.maxUpcoming || 4);
+    // Show all upcoming events but only 1 row is visible — user scrolls for more
+    const list = (calendarState.insights.upcoming || []).slice(0, 10);
     const box = document.getElementById('upcoming-list');
     if (list.length === 0) {
         box.innerHTML = '<p class="text-gray-400 text-sm">No upcoming events.</p>';
@@ -434,15 +436,10 @@ function renderUpcoming() {
         const system = Boolean(e.is_system);
         const accent = system ? 'border-l-emerald-500 bg-emerald-50/30' : 'border-l-blue-500';
         return `
-            <div class="flex items-center gap-3 rounded-xl border border-gray-100 ${accent} border-l-[3px] px-3 py-2 hover:bg-gray-50 transition-colors">
-                <div class="flex-shrink-0 text-center">
-                    <p class="text-[11px] font-bold text-gray-400 uppercase">${dateStr.split(' ')[0]}</p>
-                    <p class="text-lg font-bold text-gray-800 leading-tight">${dateStr.split(' ')[1]}</p>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gray-800 truncate">${e.title}</p>
-                    <p class="text-xs text-gray-400">${timeStr}</p>
-                </div>
+            <div class="flex items-center gap-2 rounded-lg border border-gray-100 ${accent} border-l-[3px] px-2 py-1 hover:bg-gray-50 transition-colors">
+                <span class="flex-shrink-0 text-xs font-bold text-gray-400 uppercase">${dateStr}</span>
+                <span class="flex-1 min-w-0 text-sm font-semibold text-gray-800 truncate">${e.title}</span>
+                <span class="flex-shrink-0 text-xs text-gray-400">${timeStr}</span>
             </div>
         `;
     }).join('');
