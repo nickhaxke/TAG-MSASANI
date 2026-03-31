@@ -15,6 +15,17 @@ final class ApiController
     {
     }
 
+    /** Check whether a column exists on a table (migration-safety helper). */
+    private function columnExists(string $table, string $column): bool
+    {
+        try {
+            $this->pdo->query("SELECT `{$column}` FROM `{$table}` LIMIT 0");
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     /* ───── Auth ───── */
 
     public function login(array $input): void
@@ -640,13 +651,48 @@ final class ApiController
         $type  = trim((string) ($_GET['type'] ?? ''));
         $group = trim((string) ($_GET['group'] ?? ''));
 
-        $sql = 'SELECT e.id, e.event_code, e.title, e.description, e.category, e.start_datetime, e.end_datetime,
+        $hasBudgetCols = $this->columnExists('events', 'budget_status');
+
+        if ($hasBudgetCols) {
+            $budgetSelect = 'e.budget_status, e.budget_approved_by, e.budget_approved_at,
+                       ba.full_name AS budget_approver_name';
+            $budgetJoin   = 'LEFT JOIN users ba ON ba.id = e.budget_approved_by';
+        } else {
+            // Derive budget_status from finance_entries when migration column not yet added
+            $hasApprovalStatus = $this->columnExists('finance_entries', 'approval_status');
+            if ($hasApprovalStatus) {
+                $budgetSelect = "(SELECT CASE fe2.approval_status
+                                     WHEN 'pending'  THEN 'pending_approval'
+                                     WHEN 'approved' THEN 'approved'
+                                     WHEN 'rejected' THEN 'rejected'
+                                     ELSE 'pending_approval'
+                                 END
+                                 FROM finance_entries fe2
+                                 WHERE fe2.source_type='event' AND fe2.event_id=e.id
+                                 ORDER BY fe2.id DESC LIMIT 1) AS budget_status,
+                       NULL AS budget_approved_by, NULL AS budget_approved_at,
+                       NULL AS budget_approver_name";
+            } else {
+                $budgetSelect = "CASE
+                                   WHEN EXISTS(SELECT 1 FROM finance_entries fe2 WHERE fe2.source_type='event' AND fe2.event_id=e.id AND fe2.approved_by IS NOT NULL) THEN 'approved'
+                                   WHEN EXISTS(SELECT 1 FROM finance_entries fe2 WHERE fe2.source_type='event' AND fe2.event_id=e.id) THEN 'pending_approval'
+                                   ELSE 'draft'
+                                 END AS budget_status,
+                       NULL AS budget_approved_by, NULL AS budget_approved_at,
+                       NULL AS budget_approver_name";
+            }
+            $budgetJoin = '';
+        }
+
+        $sql = "SELECT e.id, e.event_code, e.title, e.description, e.category, e.start_datetime, e.end_datetime,
                        e.venue, e.expected_attendance, e.status, e.budget_total, e.notes,
+                       {$budgetSelect},
                        g.name AS target_group, u.full_name AS organizer_name
                 FROM `events` e
                 LEFT JOIN `groups` g ON g.id = e.target_group_id
                 LEFT JOIN users u ON u.id = e.organizer_user_id
-                WHERE 1=1';
+                {$budgetJoin}
+                WHERE 1=1";
 
         $params = [];
 
@@ -853,14 +899,48 @@ final class ApiController
 
     public function eventDetails(int $eventId): void
     {
+        $hasBudgetCols = $this->columnExists('events', 'budget_status');
+
+        if ($hasBudgetCols) {
+            $budgetSelect = 'e.budget_status, e.budget_approved_by, e.budget_approved_at,
+                    ba.full_name AS budget_approver_name';
+            $budgetJoin   = 'LEFT JOIN users ba ON ba.id = e.budget_approved_by';
+        } else {
+            // Derive budget_status from finance_entries when migration column not yet added
+            $hasApprovalStatus = $this->columnExists('finance_entries', 'approval_status');
+            if ($hasApprovalStatus) {
+                $budgetSelect = "(SELECT CASE fe2.approval_status
+                                     WHEN 'pending'  THEN 'pending_approval'
+                                     WHEN 'approved' THEN 'approved'
+                                     WHEN 'rejected' THEN 'rejected'
+                                     ELSE 'pending_approval'
+                                 END
+                                 FROM finance_entries fe2
+                                 WHERE fe2.source_type='event' AND fe2.event_id=e.id
+                                 ORDER BY fe2.id DESC LIMIT 1) AS budget_status,
+                        NULL AS budget_approved_by, NULL AS budget_approved_at,
+                        (SELECT u2.full_name FROM finance_entries fe2 INNER JOIN users u2 ON u2.id=fe2.approved_by WHERE fe2.source_type='event' AND fe2.event_id=e.id AND fe2.approved_by IS NOT NULL ORDER BY fe2.id DESC LIMIT 1) AS budget_approver_name";
+            } else {
+                $budgetSelect = "CASE
+                                   WHEN EXISTS(SELECT 1 FROM finance_entries fe2 WHERE fe2.source_type='event' AND fe2.event_id=e.id AND fe2.approved_by IS NOT NULL) THEN 'approved'
+                                   WHEN EXISTS(SELECT 1 FROM finance_entries fe2 WHERE fe2.source_type='event' AND fe2.event_id=e.id) THEN 'pending_approval'
+                                   ELSE 'draft'
+                                 END AS budget_status,
+                        NULL AS budget_approved_by, NULL AS budget_approved_at, NULL AS budget_approver_name";
+            }
+            $budgetJoin = '';
+        }
+
         $eventStmt = $this->pdo->prepare(
-            'SELECT e.id, e.event_code, e.title, e.description, e.category, e.start_datetime, e.end_datetime,
+            "SELECT e.id, e.event_code, e.title, e.description, e.category, e.start_datetime, e.end_datetime,
                     e.venue, e.expected_attendance, e.status, e.budget_total, e.notes,
+                    {$budgetSelect},
                     u.full_name AS organizer_name, g.name AS target_group
              FROM `events` e
              LEFT JOIN users u ON u.id = e.organizer_user_id
              LEFT JOIN `groups` g ON g.id = e.target_group_id
-             WHERE e.id = :id LIMIT 1'
+             {$budgetJoin}
+             WHERE e.id = :id LIMIT 1"
         );
         $eventStmt->execute([':id' => $eventId]);
         $event = $eventStmt->fetch();
@@ -907,7 +987,7 @@ final class ApiController
         $attendanceTotals = $attendanceTotalsStmt->fetch() ?: [];
 
         $attendanceListStmt = $this->pdo->prepare(
-            'SELECT ea.id, ea.status, ea.check_in_datetime, m.member_code,
+            'SELECT ea.id, ea.member_id, ea.status, ea.check_in_datetime, m.member_code,
                     CONCAT(m.first_name, " ", m.last_name) AS member_name, m.phone
              FROM event_attendance ea
              INNER JOIN members m ON m.id = ea.member_id
@@ -959,6 +1039,10 @@ final class ApiController
                     'actual_expenses' => $actualExpenses,
                     'remaining_balance' => $plannedBudget - $actualExpenses,
                     'items' => $budgetItems,
+                    'status' => $event['budget_status'] ?? 'draft',
+                    'approved_by' => $event['budget_approver_name'] ?? null,
+                    'approved_at' => $event['budget_approved_at'] ?? null,
+                    'locked' => in_array($event['budget_status'] ?? 'draft', ['pending_approval', 'approved']),
                 ],
                 'tasks' => $tasks,
                 'attendance' => [
@@ -1067,6 +1151,482 @@ final class ApiController
     public function eventReport(int $eventId): void
     {
         $this->eventDetails($eventId);
+    }
+
+    public function createEventBudgetItem(int $eventId, array $input): void
+    {
+        $required = ['item_type', 'item_name', 'planned_amount'];
+        foreach ($required as $field) {
+            if (!isset($input[$field]) || $input[$field] === '') {
+                Response::json(['success' => false, 'message' => $field . ' is required'], 422);
+            }
+        }
+
+        $itemType = trim((string) $input['item_type']);
+        if (!in_array($itemType, ['income', 'expense'], true)) {
+            Response::json(['success' => false, 'message' => 'item_type must be income or expense'], 422);
+        }
+
+        $eventExistsStmt = $this->pdo->prepare('SELECT id FROM `events` WHERE id = :id LIMIT 1');
+        $eventExistsStmt->execute([':id' => $eventId]);
+        if (!$eventExistsStmt->fetch()) {
+            Response::json(['success' => false, 'message' => 'Event not found'], 404);
+        }
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO event_budget_items (event_id, item_type, item_name, planned_amount, actual_amount, notes)
+             VALUES (:event_id, :item_type, :item_name, :planned_amount, :actual_amount, :notes)'
+        );
+        $stmt->execute([
+            ':event_id' => $eventId,
+            ':item_type' => $itemType,
+            ':item_name' => trim((string) $input['item_name']),
+            ':planned_amount' => max(0, (float) $input['planned_amount']),
+            ':actual_amount' => max(0, (float) ($input['actual_amount'] ?? 0)),
+            ':notes' => trim((string) ($input['notes'] ?? '')),
+        ]);
+
+        $id = (int) $this->pdo->lastInsertId();
+        $user = Auth::user();
+        $actorId = isset($user['id']) ? (int) $user['id'] : null;
+        Audit::log($this->pdo, $actorId, 'events', 'budget_item_create', 'event_budget_items', $id, null, $input, 'Created event budget breakdown item');
+
+        Response::json(['success' => true, 'message' => 'Budget item created', 'data' => ['id' => $id]], 201);
+    }
+
+    public function updateEventBudgetItem(int $eventId, int $itemId, array $input): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE event_budget_items
+             SET item_type = :item_type,
+                 item_name = :item_name,
+                 planned_amount = :planned_amount,
+                 actual_amount = :actual_amount,
+                 notes = :notes,
+                 updated_at = NOW()
+             WHERE id = :id AND event_id = :event_id'
+        );
+
+        $itemType = trim((string) ($input['item_type'] ?? 'expense'));
+        if (!in_array($itemType, ['income', 'expense'], true)) {
+            Response::json(['success' => false, 'message' => 'item_type must be income or expense'], 422);
+        }
+
+        $stmt->execute([
+            ':id' => $itemId,
+            ':event_id' => $eventId,
+            ':item_type' => $itemType,
+            ':item_name' => trim((string) ($input['item_name'] ?? '')),
+            ':planned_amount' => max(0, (float) ($input['planned_amount'] ?? 0)),
+            ':actual_amount' => max(0, (float) ($input['actual_amount'] ?? 0)),
+            ':notes' => trim((string) ($input['notes'] ?? '')),
+        ]);
+
+        if ($stmt->rowCount() === 0) {
+            Response::json(['success' => false, 'message' => 'Budget item not found'], 404);
+        }
+
+        $user = Auth::user();
+        $actorId = isset($user['id']) ? (int) $user['id'] : null;
+        Audit::log($this->pdo, $actorId, 'events', 'budget_item_update', 'event_budget_items', $itemId, null, $input, 'Updated event budget item');
+
+        Response::json(['success' => true, 'message' => 'Budget item updated']);
+    }
+
+    public function postEventBudgetItemToFinance(int $eventId, int $itemId, array $input): void
+    {
+        $required = ['category_id', 'amount', 'payment_method'];
+        foreach ($required as $field) {
+            if (!isset($input[$field]) || $input[$field] === '') {
+                Response::json(['success' => false, 'message' => $field . ' is required'], 422);
+            }
+        }
+
+        $budgetItemStmt = $this->pdo->prepare(
+            'SELECT id, item_type, item_name, notes
+             FROM event_budget_items
+             WHERE id = :id AND event_id = :event_id
+             LIMIT 1'
+        );
+        $budgetItemStmt->execute([':id' => $itemId, ':event_id' => $eventId]);
+        $budgetItem = $budgetItemStmt->fetch();
+        if (!$budgetItem) {
+            Response::json(['success' => false, 'message' => 'Budget item not found'], 404);
+        }
+
+        $categoryStmt = $this->pdo->prepare('SELECT id, category_type FROM finance_categories WHERE id = :id LIMIT 1');
+        $categoryStmt->execute([':id' => (int) $input['category_id']]);
+        $category = $categoryStmt->fetch();
+        if (!$category) {
+            Response::json(['success' => false, 'message' => 'Finance category not found'], 404);
+        }
+        if ((string) $category['category_type'] !== (string) $budgetItem['item_type']) {
+            Response::json(['success' => false, 'message' => 'Finance category type must match budget item type'], 422);
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            Response::json(['success' => false, 'message' => 'Not authenticated'], 401);
+        }
+
+        $entryNoStmt = $this->pdo->query("SELECT CONCAT('FIN-', DATE_FORMAT(NOW(), '%Y%m%d'), '-', LPAD(COALESCE(MAX(id), 0) + 1, 4, '0')) FROM finance_entries");
+        $entryNo = (string) $entryNoStmt->fetchColumn();
+
+        $amount = max(0, (float) $input['amount']);
+        if ($amount <= 0) {
+            Response::json(['success' => false, 'message' => 'amount must be greater than zero'], 422);
+        }
+
+        $entryDate = trim((string) ($input['entry_date'] ?? date('Y-m-d')));
+        $description = trim((string) ($input['description'] ?? ''));
+        if ($description === '') {
+            $description = 'Event budget: ' . (string) $budgetItem['item_name'];
+        }
+
+        $hasApprovalCols = $this->columnExists('finance_entries', 'approval_status');
+
+        if ($hasApprovalCols) {
+            $insertStmt = $this->pdo->prepare(
+                'INSERT INTO finance_entries (
+                    entry_no, entry_date, category_id, amount, payment_method,
+                    source_type, source_id, event_id, description, recorded_by, approval_status
+                ) VALUES (
+                    :entry_no, :entry_date, :category_id, :amount, :payment_method,
+                    :source_type, :source_id, :event_id, :description, :recorded_by, :approval_status
+                )'
+            );
+            $insertStmt->execute([
+                ':entry_no' => $entryNo,
+                ':entry_date' => $entryDate,
+                ':category_id' => (int) $input['category_id'],
+                ':amount' => $amount,
+                ':payment_method' => trim((string) $input['payment_method']),
+                ':source_type' => 'event',
+                ':source_id' => $itemId,
+                ':event_id' => $eventId,
+                ':description' => $description,
+                ':recorded_by' => (int) $user['id'],
+                ':approval_status' => 'pending',
+            ]);
+        } else {
+            $insertStmt = $this->pdo->prepare(
+                'INSERT INTO finance_entries (
+                    entry_no, entry_date, category_id, amount, payment_method,
+                    source_type, source_id, event_id, description, recorded_by
+                ) VALUES (
+                    :entry_no, :entry_date, :category_id, :amount, :payment_method,
+                    :source_type, :source_id, :event_id, :description, :recorded_by
+                )'
+            );
+            $insertStmt->execute([
+                ':entry_no' => $entryNo,
+                ':entry_date' => $entryDate,
+                ':category_id' => (int) $input['category_id'],
+                ':amount' => $amount,
+                ':payment_method' => trim((string) $input['payment_method']),
+                ':source_type' => 'event',
+                ':source_id' => $itemId,
+                ':event_id' => $eventId,
+                ':description' => $description,
+                ':recorded_by' => (int) $user['id'],
+            ]);
+        }
+
+        $financeEntryId = (int) $this->pdo->lastInsertId();
+
+        $linkStmt = $this->pdo->prepare(
+            'INSERT INTO event_finance_links (event_id, finance_entry_id, relation_type)
+             VALUES (:event_id, :finance_entry_id, :relation_type)'
+        );
+        $linkStmt->execute([
+            ':event_id' => $eventId,
+            ':finance_entry_id' => $financeEntryId,
+            ':relation_type' => (string) $budgetItem['item_type'],
+        ]);
+
+        $updateBudgetStmt = $this->pdo->prepare(
+            'UPDATE event_budget_items
+             SET actual_amount = actual_amount + :amount, updated_at = NOW()
+             WHERE id = :id AND event_id = :event_id'
+        );
+        $updateBudgetStmt->execute([
+            ':amount' => $amount,
+            ':id' => $itemId,
+            ':event_id' => $eventId,
+        ]);
+
+        Audit::log(
+            $this->pdo,
+            (int) $user['id'],
+            'events',
+            'budget_item_post_finance',
+            'finance_entries',
+            $financeEntryId,
+            null,
+            $input,
+            'Posted event budget item to finance for accountant approval'
+        );
+
+        Response::json([
+            'success' => true,
+            'message' => 'Budget item posted to finance and is pending accountant approval',
+            'data' => ['finance_entry_id' => $financeEntryId],
+        ], 201);
+    }
+
+    public function sendEventBudgetToFinance(int $eventId): void
+    {
+        $hasBudgetCols    = $this->columnExists('events', 'budget_status');
+        $hasApprovalCols  = $this->columnExists('finance_entries', 'approval_status');
+
+        $budgetStatusSelect = $hasBudgetCols ? ', budget_status' : '';
+        $eventStmt = $this->pdo->prepare(
+            "SELECT id, title, budget_total{$budgetStatusSelect}, start_datetime
+             FROM `events`
+             WHERE id = :id
+             LIMIT 1"
+        );
+        $eventStmt->execute([':id' => $eventId]);
+        $event = $eventStmt->fetch();
+        if (!$event) {
+            Response::json(['success' => false, 'message' => 'Event not found'], 404);
+        }
+
+        // Determine current budget status — use DB column if exists, otherwise derive from finance_entries
+        if ($hasBudgetCols) {
+            $currentStatus = $event['budget_status'] ?? 'draft';
+        } elseif ($hasApprovalCols) {
+            $derivedStmt = $this->pdo->prepare(
+                "SELECT CASE approval_status
+                     WHEN 'pending'  THEN 'pending_approval'
+                     WHEN 'approved' THEN 'approved'
+                     WHEN 'rejected' THEN 'rejected'
+                     ELSE 'pending_approval'
+                 END
+                 FROM finance_entries
+                 WHERE source_type='event' AND event_id=:eid
+                 ORDER BY id DESC LIMIT 1"
+            );
+            $derivedStmt->execute([':eid' => $eventId]);
+            $currentStatus = (string) ($derivedStmt->fetchColumn() ?: 'draft');
+        } else {
+            $currentStatus = 'draft';
+        }
+        if ($currentStatus === 'pending_approval') {
+            Response::json(['success' => false, 'message' => 'This event budget is already pending approval'], 409);
+        }
+        if ($currentStatus === 'approved') {
+            Response::json(['success' => false, 'message' => 'This event budget has already been approved'], 409);
+        }
+
+        $budgetAmount = (float) ($event['budget_total'] ?? 0);
+        if ($budgetAmount <= 0) {
+            Response::json(['success' => false, 'message' => 'Event has no budget to send'], 422);
+        }
+
+        // Check for existing pending entry
+        if ($hasApprovalCols) {
+            $existsStmt = $this->pdo->prepare(
+                "SELECT id FROM finance_entries
+                 WHERE source_type = 'event' AND event_id = :eid AND approval_status = 'pending'
+                 LIMIT 1"
+            );
+            $existsStmt->execute([':eid' => $eventId]);
+            if ($existsStmt->fetch()) {
+                Response::json(['success' => false, 'message' => 'This event already has a pending finance entry'], 409);
+            }
+        }
+
+        // Prefer the dedicated EVENT_EXPENSE category; fall back to any active expense category
+        $categoryStmt = $this->pdo->query(
+            "SELECT id FROM finance_categories
+             WHERE category_type = 'expense' AND is_active = 1
+             ORDER BY (code = 'EVENT_EXPENSE') DESC, is_system DESC, id ASC
+             LIMIT 1"
+        );
+        $categoryId = (int) $categoryStmt->fetchColumn();
+        if ($categoryId <= 0) {
+            Response::json(['success' => false, 'message' => 'No active expense category found'], 422);
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            Response::json(['success' => false, 'message' => 'Not authenticated'], 401);
+        }
+
+        $entryNoStmt = $this->pdo->query("SELECT CONCAT('FIN-', DATE_FORMAT(NOW(), '%Y%m%d'), '-', LPAD(COALESCE(MAX(id), 0) + 1, 4, '0')) FROM finance_entries");
+        $entryNo = (string) $entryNoStmt->fetchColumn();
+
+        $this->pdo->beginTransaction();
+        try {
+            // Build description with budget item details
+            $itemStmt = $this->pdo->prepare(
+                'SELECT item_name, item_type, planned_amount, actual_amount
+                 FROM event_budget_items WHERE event_id = :eid ORDER BY id ASC'
+            );
+            $itemStmt->execute([':eid' => $eventId]);
+            $items = $itemStmt->fetchAll();
+            $desc = 'Event budget: ' . (string) $event['title'];
+            if (!empty($items)) {
+                $itemList = array_map(fn($i) => $i['item_name'] . ' (TZS ' . number_format((float)$i['planned_amount'], 0) . ')', $items);
+                $desc .= ' | Items: ' . implode(', ', array_slice($itemList, 0, 5));
+                if (count($itemList) > 5) $desc .= '... +' . (count($itemList) - 5) . ' more';
+            }
+
+            // Insert finance entry
+            if ($hasApprovalCols) {
+                $insertStmt = $this->pdo->prepare(
+                    'INSERT INTO finance_entries (
+                        entry_no, entry_date, category_id, amount, payment_method,
+                        source_type, source_id, event_id, description, recorded_by, approval_status
+                    ) VALUES (
+                        :entry_no, :entry_date, :category_id, :amount, :payment_method,
+                        :source_type, :source_id, :event_id, :description, :recorded_by, :approval_status
+                    )'
+                );
+                $insertStmt->execute([
+                    ':entry_no' => $entryNo,
+                    ':entry_date' => date('Y-m-d'),
+                    ':category_id' => $categoryId,
+                    ':amount' => $budgetAmount,
+                    ':payment_method' => 'cash',
+                    ':source_type' => 'event',
+                    ':source_id' => $eventId,
+                    ':event_id' => $eventId,
+                    ':description' => $desc,
+                    ':recorded_by' => (int) $user['id'],
+                    ':approval_status' => 'pending',
+                ]);
+            } else {
+                $insertStmt = $this->pdo->prepare(
+                    'INSERT INTO finance_entries (
+                        entry_no, entry_date, category_id, amount, payment_method,
+                        source_type, source_id, event_id, description, recorded_by
+                    ) VALUES (
+                        :entry_no, :entry_date, :category_id, :amount, :payment_method,
+                        :source_type, :source_id, :event_id, :description, :recorded_by
+                    )'
+                );
+                $insertStmt->execute([
+                    ':entry_no' => $entryNo,
+                    ':entry_date' => date('Y-m-d'),
+                    ':category_id' => $categoryId,
+                    ':amount' => $budgetAmount,
+                    ':payment_method' => 'cash',
+                    ':source_type' => 'event',
+                    ':source_id' => $eventId,
+                    ':event_id' => $eventId,
+                    ':description' => $desc,
+                    ':recorded_by' => (int) $user['id'],
+                ]);
+            }
+            $financeEntryId = (int) $this->pdo->lastInsertId();
+
+            // Link event to finance entry
+            $linkStmt = $this->pdo->prepare(
+                'INSERT INTO event_finance_links (event_id, finance_entry_id, relation_type)
+                 VALUES (:event_id, :finance_entry_id, :relation_type)'
+            );
+            $linkStmt->execute([
+                ':event_id' => $eventId,
+                ':finance_entry_id' => $financeEntryId,
+                ':relation_type' => 'expense',
+            ]);
+
+            // Update event budget status (only if column exists)
+            if ($hasBudgetCols) {
+                $updateStmt = $this->pdo->prepare(
+                    "UPDATE `events` SET budget_status = 'pending_approval' WHERE id = :id"
+                );
+                $updateStmt->execute([':id' => $eventId]);
+            }
+
+            $this->pdo->commit();
+        } catch (\Exception $e) {
+            $this->pdo->rollBack();
+            Response::json(['success' => false, 'message' => 'Failed to send budget: ' . $e->getMessage()], 500);
+        }
+
+        Audit::log(
+            $this->pdo,
+            (int) $user['id'],
+            'events',
+            'send_budget_to_finance',
+            'finance_entries',
+            $financeEntryId,
+            null,
+            ['event_id' => $eventId, 'amount' => $budgetAmount, 'items_count' => count($items ?? [])],
+            'Sent event budget to finance for approval'
+        );
+
+        Response::json([
+            'success' => true,
+            'message' => 'Budget sent to finance for approval',
+            'data' => ['finance_entry_id' => $financeEntryId, 'budget_status' => 'pending_approval'],
+        ], 201);
+    }
+
+    public function registerEventParticipant(int $eventId, array $input): void
+    {
+        $memberId = isset($input['member_id']) ? (int) $input['member_id'] : 0;
+        if ($memberId <= 0) {
+            Response::json(['success' => false, 'message' => 'member_id is required'], 422);
+        }
+
+        $memberStmt = $this->pdo->prepare('SELECT id FROM members WHERE id = :id LIMIT 1');
+        $memberStmt->execute([':id' => $memberId]);
+        if (!$memberStmt->fetch()) {
+            Response::json(['success' => false, 'message' => 'Member not found'], 404);
+        }
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO event_attendance (event_id, member_id, status)
+             VALUES (:event_id, :member_id, :status)
+             ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = NOW()'
+        );
+        $stmt->execute([
+            ':event_id' => $eventId,
+            ':member_id' => $memberId,
+            ':status' => 'registered',
+        ]);
+
+        $user = Auth::user();
+        $actorId = isset($user['id']) ? (int) $user['id'] : null;
+        Audit::log($this->pdo, $actorId, 'events', 'attendance_register', 'event_attendance', $memberId, null, $input, 'Registered event participant');
+
+        Response::json(['success' => true, 'message' => 'Participant registered']);
+    }
+
+    public function updateEventParticipantAttendance(int $eventId, int $attendanceId, array $input): void
+    {
+        $status = trim((string) ($input['status'] ?? ''));
+        if (!in_array($status, ['registered', 'present', 'absent'], true)) {
+            Response::json(['success' => false, 'message' => 'status must be registered, present or absent'], 422);
+        }
+
+        $stmt = $this->pdo->prepare(
+            'UPDATE event_attendance
+             SET status = :status,
+                 check_in_datetime = :check_in_datetime,
+                 updated_at = NOW()
+             WHERE id = :id AND event_id = :event_id'
+        );
+        $stmt->execute([
+            ':status' => $status,
+            ':check_in_datetime' => $status === 'present' ? date('Y-m-d H:i:s') : null,
+            ':id' => $attendanceId,
+            ':event_id' => $eventId,
+        ]);
+
+        if ($stmt->rowCount() === 0) {
+            Response::json(['success' => false, 'message' => 'Attendance row not found'], 404);
+        }
+
+        $user = Auth::user();
+        $actorId = isset($user['id']) ? (int) $user['id'] : null;
+        Audit::log($this->pdo, $actorId, 'events', 'attendance_update', 'event_attendance', $attendanceId, null, $input, 'Updated event participant attendance status');
+
+        Response::json(['success' => true, 'message' => 'Attendance status updated']);
     }
 
     /* ───── Attendance ───── */
@@ -1635,6 +2195,494 @@ final class ApiController
         Audit::log($this->pdo, (int) $user['id'], 'finance', 'create', 'finance_entries', $id, null, $input, 'Recorded finance entry');
 
         Response::json(['success' => true, 'message' => 'Finance entry created', 'data' => ['id' => $id]], 201);
+    }
+
+    /* ───── Finance Dashboard Stats ───── */
+
+    public function financeOverview(): void
+    {
+        $month = trim((string) ($_GET['month'] ?? date('Y-m')));
+        if (preg_match('/^\d{4}-\d{2}$/', $month) !== 1) {
+            $month = date('Y-m');
+        }
+
+        $monthStart = $month . '-01';
+        $monthEnd = date('Y-m-t', strtotime($monthStart));
+
+        // Only count APPROVED entries in all financial totals.
+        // NULL = legacy entries recorded before the approval workflow existed → treat as approved.
+        // Only 'pending' and 'rejected' must be excluded from financial figures.
+        $hasApprovalStatus = $this->columnExists('finance_entries', 'approval_status');
+        $approvedFilter    = $hasApprovalStatus
+            ? "AND (fe.approval_status = 'approved' OR fe.approval_status IS NULL)"
+            : '';  // column doesn't exist yet: count everything
+
+        // Total income this month (approved only)
+        $incStmt = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(fe.amount),0) FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             WHERE fc.category_type='income' AND fe.entry_date BETWEEN :s AND :e {$approvedFilter}"
+        );
+        $incStmt->execute([':s' => $monthStart, ':e' => $monthEnd]);
+        $monthIncome = (float) $incStmt->fetchColumn();
+
+        // Total expense this month (approved only)
+        $expStmt = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(fe.amount),0) FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             WHERE fc.category_type='expense' AND fe.entry_date BETWEEN :s AND :e {$approvedFilter}"
+        );
+        $expStmt->execute([':s' => $monthStart, ':e' => $monthEnd]);
+        $monthExpense = (float) $expStmt->fetchColumn();
+
+        // All-time totals (approved only)
+        $allIncome = (float) $this->pdo->query(
+            "SELECT COALESCE(SUM(fe.amount),0) FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             WHERE fc.category_type='income' {$approvedFilter}"
+        )->fetchColumn();
+        $allExpense = (float) $this->pdo->query(
+            "SELECT COALESCE(SUM(fe.amount),0) FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             WHERE fc.category_type='expense' {$approvedFilter}"
+        )->fetchColumn();
+
+        // Pending pledges
+        $pledgeStmt = $this->pdo->query(
+            "SELECT COALESCE(SUM(total_amount - paid_amount), 0) FROM pledges WHERE status IN ('active','overdue')"
+        );
+        $pendingPledges = (float) $pledgeStmt->fetchColumn();
+
+        // Category breakdown this month (approved only)
+        $catStmt = $this->pdo->prepare(
+            "SELECT fc.name, fc.category_type, COALESCE(SUM(fe.amount),0) AS total
+             FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             WHERE fe.entry_date BETWEEN :s AND :e {$approvedFilter}
+             GROUP BY fc.id, fc.name, fc.category_type
+             ORDER BY total DESC"
+        );
+        $catStmt->execute([':s' => $monthStart, ':e' => $monthEnd]);
+        $categoryBreakdown = $catStmt->fetchAll();
+
+        // Monthly trend — last 6 months (approved only)
+        $trendStmt = $this->pdo->query(
+            "SELECT DATE_FORMAT(fe.entry_date, '%Y-%m') AS month,
+                    fc.category_type,
+                    COALESCE(SUM(fe.amount), 0) AS total
+             FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             WHERE fe.entry_date >= DATE_SUB(CURRENT_DATE, INTERVAL 6 MONTH)
+             {$approvedFilter}
+             GROUP BY month, fc.category_type
+             ORDER BY month ASC"
+        );
+        $trendRows = $trendStmt->fetchAll();
+        $trend = [];
+        foreach ($trendRows as $r) {
+            $trend[$r['month']][$r['category_type']] = (float) $r['total'];
+        }
+
+        // Pending approvals count
+        $pendingApprovals = 0;
+        if ($hasApprovalStatus) {
+            $pendingApprovals = (int) $this->pdo->query(
+                "SELECT COUNT(*) FROM finance_entries WHERE approval_status = 'pending'"
+            )->fetchColumn();
+        }
+        $pendingBudgets = 0;
+        if ($this->columnExists('department_budgets', 'id')) {
+            $pendingBudgets = (int) $this->pdo->query(
+                "SELECT COUNT(*) FROM department_budgets WHERE status = 'submitted'"
+            )->fetchColumn();
+        }
+
+        // Recent entries — show approved + pending so user can see what needs action
+        // Rejected entries excluded from this view (audit trail available in reports)
+        $approvalStatusSelect  = $hasApprovalStatus ? 'fe.approval_status,' : "'approved' AS approval_status,";
+        $recentExcludeRejected = $hasApprovalStatus ? "AND (fe.approval_status != 'rejected' OR fe.approval_status IS NULL)" : '';
+        $recentStmt = $this->pdo->query(
+            "SELECT fe.id, fe.entry_no, fe.entry_date, fc.name AS category_name, fc.category_type,
+                    fe.amount, fe.payment_method, fe.description, {$approvalStatusSelect}
+                    m.first_name, m.last_name
+             FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             LEFT JOIN members m ON m.id=fe.member_id
+             WHERE 1=1 {$recentExcludeRejected}
+             ORDER BY fe.entry_date DESC, fe.id DESC LIMIT 10"
+        );
+
+        Response::json([
+            'success' => true,
+            'data' => [
+                'month' => $month,
+                'month_income' => $monthIncome,
+                'month_expense' => $monthExpense,
+                'month_balance' => $monthIncome - $monthExpense,
+                'all_time_income' => $allIncome,
+                'all_time_expense' => $allExpense,
+                'all_time_balance' => $allIncome - $allExpense,
+                'pending_pledges' => $pendingPledges,
+                'pending_approvals' => $pendingApprovals,
+                'pending_budgets' => $pendingBudgets,
+                'category_breakdown' => $categoryBreakdown,
+                'trend' => $trend,
+                'recent_entries' => $recentStmt->fetchAll(),
+            ],
+        ]);
+    }
+
+    public function financeEntries(): void
+    {
+        $type = trim((string) ($_GET['type'] ?? ''));
+        $category = trim((string) ($_GET['category'] ?? ''));
+        $dateFrom = trim((string) ($_GET['date_from'] ?? ''));
+        $dateTo = trim((string) ($_GET['date_to'] ?? ''));
+        $search = trim((string) ($_GET['search'] ?? ''));
+        $approval = trim((string) ($_GET['approval'] ?? ''));
+
+        $hasApprovalStatus  = $this->columnExists('finance_entries', 'approval_status');
+        $hasRejectionCount  = $this->columnExists('finance_entries', 'rejection_count');
+        $hasApprovalCols    = $hasApprovalStatus; // used for WHERE filter below
+        $approvalSelect = ($hasApprovalStatus ? 'fe.approval_status' : "'approved' AS approval_status")
+                        . ', '
+                        . ($hasRejectionCount ? 'fe.rejection_count' : '0 AS rejection_count');
+
+        $sql = "SELECT fe.id, fe.entry_no, fe.entry_date, fe.event_id, fe.source_id, fc.name AS category_name, fc.category_type,
+                       fe.amount, fe.payment_method, fe.source_type, fe.description, {$approvalSelect},
+                       fe.reference_no, m.first_name, m.last_name, m.member_code,
+                       u.full_name AS recorded_by_name, a.full_name AS approved_by_name, fe.approved_at
+                FROM finance_entries fe
+                INNER JOIN finance_categories fc ON fc.id=fe.category_id
+                LEFT JOIN members m ON m.id=fe.member_id
+                LEFT JOIN users u ON u.id=fe.recorded_by
+                LEFT JOIN users a ON a.id=fe.approved_by
+                WHERE 1=1";
+        $params = [];
+
+        if ($type !== '' && in_array($type, ['income', 'expense'], true)) {
+            $sql .= ' AND fc.category_type = :type';
+            $params[':type'] = $type;
+        }
+        if ($category !== '' && ctype_digit($category)) {
+            $sql .= ' AND fe.category_id = :cat';
+            $params[':cat'] = (int) $category;
+        }
+        if ($dateFrom !== '' && strtotime($dateFrom) !== false) {
+            $sql .= ' AND fe.entry_date >= :df';
+            $params[':df'] = $dateFrom;
+        }
+        if ($dateTo !== '' && strtotime($dateTo) !== false) {
+            $sql .= ' AND fe.entry_date <= :dt';
+            $params[':dt'] = $dateTo;
+        }
+        if ($search !== '') {
+            $sql .= ' AND (fe.description LIKE :s1 OR fe.entry_no LIKE :s2 OR m.first_name LIKE :s3 OR m.last_name LIKE :s4)';
+            $like = '%' . $search . '%';
+            $params[':s1'] = $like;
+            $params[':s2'] = $like;
+            $params[':s3'] = $like;
+            $params[':s4'] = $like;
+        }
+        if ($approval !== '' && in_array($approval, ['pending', 'approved', 'rejected'], true) && $hasApprovalCols) {
+            // Explicit filter requested (e.g. Approvals tab asking for ?approval=pending)
+            $sql .= ' AND fe.approval_status = :appr';
+            $params[':appr'] = $approval;
+        } elseif ($approval === '' && $hasApprovalCols) {
+            // No explicit filter: hide only 'rejected'. NULL = legacy approved entry, keep it.
+            $sql .= " AND (fe.approval_status != 'rejected' OR fe.approval_status IS NULL)";
+        }
+        // When approval column doesn't exist (pre-migration), show all entries
+
+        $sql .= ' ORDER BY fe.entry_date DESC, fe.id DESC LIMIT 500';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        Response::json(['success' => true, 'data' => $stmt->fetchAll()]);
+    }
+
+    public function approveFinanceEntry(int $id, array $input): void
+    {
+        $decision = trim((string) ($input['decision'] ?? ''));
+        if (!in_array($decision, ['approved', 'rejected'], true)) {
+            Response::json(['success' => false, 'message' => 'Decision must be approved or rejected'], 422);
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            Response::json(['success' => false, 'message' => 'Not authenticated'], 401);
+        }
+        
+        $role = strtolower((string) ($user['role'] ?? ''));
+        if (!str_contains($role, 'admin') && !str_contains($role, 'finance')) {
+            Response::json(['success' => false, 'message' => 'Only Admin or Finance Officer can approve finance entries'], 403);
+        }
+
+        $hasApprovalCols    = $this->columnExists('finance_entries', 'approval_status');
+        $hasRejectionCount  = $this->columnExists('finance_entries', 'rejection_count');
+        $hasBudgetCols      = $this->columnExists('events', 'budget_status');
+
+        // Get the entry first to check source
+        $approvalColsSelect = ($hasApprovalCols ? ', approval_status' : '')
+                            . ($hasRejectionCount ? ', rejection_count' : '');
+        $entryStmt = $this->pdo->prepare(
+            "SELECT id, source_type, event_id, amount{$approvalColsSelect}
+             FROM finance_entries WHERE id = :id LIMIT 1"
+        );
+        $entryStmt->execute([':id' => $id]);
+        $entry = $entryStmt->fetch();
+        if (!$entry) {
+            Response::json(['success' => false, 'message' => 'Finance entry not found'], 404);
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            // Update finance entry status
+            if ($hasApprovalCols) {
+                if ($decision === 'rejected' && $hasRejectionCount) {
+                    $rejCount = ((int)($entry['rejection_count'] ?? 0)) + 1;
+                    $stmt = $this->pdo->prepare(
+                        'UPDATE finance_entries SET approval_status = :status, approved_by = :uid, approved_at = NOW(), rejection_count = :rc WHERE id = :id'
+                    );
+                    $stmt->execute([':status' => $decision, ':uid' => (int) $user['id'], ':id' => $id, ':rc' => $rejCount]);
+                } else {
+                    $stmt = $this->pdo->prepare(
+                        'UPDATE finance_entries SET approval_status = :status, approved_by = :uid, approved_at = NOW() WHERE id = :id'
+                    );
+                    $stmt->execute([':status' => $decision, ':uid' => (int) $user['id'], ':id' => $id]);
+                }
+            } else {
+                // Columns don't exist yet — just update approved_by/at
+                $stmt = $this->pdo->prepare(
+                    'UPDATE finance_entries SET approved_by = :uid, approved_at = NOW() WHERE id = :id'
+                );
+                $stmt->execute([':uid' => (int) $user['id'], ':id' => $id]);
+            }
+
+            // Cascade to event if this entry came from an event budget
+            $eventId = (int) ($entry['event_id'] ?? 0);
+            if ($entry['source_type'] === 'event' && $eventId > 0 && $hasBudgetCols) {
+                $budgetStatus = $decision === 'approved' ? 'approved' : 'rejected';
+                $updateEvent = $this->pdo->prepare(
+                    'UPDATE `events` SET budget_status = :bs, budget_approved_by = :uid, budget_approved_at = NOW() WHERE id = :eid'
+                );
+                $updateEvent->execute([':bs' => $budgetStatus, ':uid' => (int) $user['id'], ':eid' => $eventId]);
+            }
+
+            $this->pdo->commit();
+        } catch (\Exception $e) {
+            $this->pdo->rollBack();
+            Response::json(['success' => false, 'message' => 'Failed: ' . $e->getMessage()], 500);
+        }
+
+        Audit::log($this->pdo, (int) $user['id'], 'finance', $decision, 'finance_entries', $id, null, [
+            'decision' => $decision,
+            'event_id' => $eventId ?? null,
+            'amount' => $entry['amount'] ?? 0,
+        ], "Finance entry $decision");
+
+        Response::json(['success' => true, 'message' => "Entry $decision successfully"]);
+    }
+
+    /* ───── Pledges (Ahadi) ───── */
+
+    public function listPledges(): void
+    {
+        $status = trim((string) ($_GET['status'] ?? ''));
+        $sql = "SELECT p.id, p.pledge_no, p.campaign, p.description, p.total_amount, p.paid_amount,
+                       (p.total_amount - p.paid_amount) AS balance,
+                       p.pledge_date, p.due_date, p.status,
+                       m.first_name, m.last_name, m.member_code, m.phone
+                FROM pledges p
+                INNER JOIN members m ON m.id = p.member_id
+                WHERE 1=1";
+        $params = [];
+        if ($status !== '' && in_array($status, ['active', 'completed', 'cancelled', 'overdue'], true)) {
+            $sql .= ' AND p.status = :st';
+            $params[':st'] = $status;
+        }
+        $sql .= ' ORDER BY p.pledge_date DESC LIMIT 500';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        Response::json(['success' => true, 'data' => $stmt->fetchAll()]);
+    }
+
+    public function createPledge(array $input): void
+    {
+        $required = ['member_id', 'total_amount', 'pledge_date'];
+        foreach ($required as $f) {
+            if (empty($input[$f])) {
+                Response::json(['success' => false, 'message' => "$f is required"], 422);
+            }
+        }
+        $user = Auth::user();
+        if (!$user) {
+            Response::json(['success' => false, 'message' => 'Not authenticated'], 401);
+        }
+
+        $pledgeNo = trim((string) ($input['pledge_no'] ?? ''));
+        if ($pledgeNo === '') {
+            $seq = (int) $this->pdo->query("SELECT COALESCE(MAX(id),0)+1 FROM pledges")->fetchColumn();
+            $pledgeNo = 'PLG-' . date('Y') . '-' . str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+        }
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO pledges (pledge_no, member_id, campaign, description, total_amount, pledge_date, due_date, status, created_by)
+             VALUES (:pno, :mid, :camp, :desc, :amt, :pdate, :due, :st, :uid)'
+        );
+        $stmt->execute([
+            ':pno' => $pledgeNo,
+            ':mid' => (int) $input['member_id'],
+            ':camp' => trim((string) ($input['campaign'] ?? '')),
+            ':desc' => trim((string) ($input['description'] ?? '')),
+            ':amt' => (float) $input['total_amount'],
+            ':pdate' => $input['pledge_date'],
+            ':due' => isset($input['due_date']) && $input['due_date'] !== '' ? $input['due_date'] : null,
+            ':st' => 'active',
+            ':uid' => (int) $user['id'],
+        ]);
+        $id = (int) $this->pdo->lastInsertId();
+        Audit::log($this->pdo, (int) $user['id'], 'finance', 'create_pledge', 'pledges', $id, null, $input, 'Created pledge');
+        Response::json(['success' => true, 'message' => 'Pledge created', 'data' => ['id' => $id, 'pledge_no' => $pledgeNo]], 201);
+    }
+
+    public function pledgeStats(): void
+    {
+        $row = $this->pdo->query(
+            "SELECT COUNT(*) AS total,
+                    SUM(status='active') AS active,
+                    SUM(status='completed') AS completed,
+                    SUM(status='overdue') AS overdue,
+                    COALESCE(SUM(total_amount),0) AS total_pledged,
+                    COALESCE(SUM(paid_amount),0) AS total_paid,
+                    COALESCE(SUM(total_amount - paid_amount),0) AS total_balance
+             FROM pledges"
+        )->fetch();
+        Response::json(['success' => true, 'data' => $row]);
+    }
+
+    /* ───── Department Budgets ───── */
+
+    public function listBudgets(): void
+    {
+        // department_budgets table may not exist before migration
+        if (!$this->columnExists('department_budgets', 'id')) {
+            Response::json(['success' => true, 'data' => []]);
+        }
+
+        $month = trim((string) ($_GET['month'] ?? ''));
+        $status = trim((string) ($_GET['status'] ?? ''));
+
+        $sql = "SELECT db.id, db.department, db.fiscal_month, db.planned_amount, db.spent_amount,
+                       ROUND(db.spent_amount / NULLIF(db.planned_amount,0) * 100, 1) AS percent_used,
+                       db.status, db.notes,
+                       u.full_name AS submitted_by_name, a.full_name AS approved_by_name, db.approved_at
+                FROM department_budgets db
+                LEFT JOIN users u ON u.id = db.submitted_by
+                LEFT JOIN users a ON a.id = db.approved_by
+                WHERE 1=1";
+        $params = [];
+        if ($month !== '' && preg_match('/^\d{4}-\d{2}$/', $month) === 1) {
+            $sql .= ' AND db.fiscal_month = :m';
+            $params[':m'] = $month;
+        }
+        if ($status !== '' && in_array($status, ['draft', 'submitted', 'approved', 'rejected'], true)) {
+            $sql .= ' AND db.status = :st';
+            $params[':st'] = $status;
+        }
+        $sql .= ' ORDER BY db.fiscal_month DESC, db.department ASC';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        Response::json(['success' => true, 'data' => $stmt->fetchAll()]);
+    }
+
+    public function createBudget(array $input): void
+    {
+        $required = ['department', 'fiscal_month', 'planned_amount'];
+        foreach ($required as $f) {
+            if (empty($input[$f])) {
+                Response::json(['success' => false, 'message' => "$f is required"], 422);
+            }
+        }
+        $user = Auth::user();
+        if (!$user) {
+            Response::json(['success' => false, 'message' => 'Not authenticated'], 401);
+        }
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO department_budgets (department, category_id, fiscal_month, planned_amount, status, submitted_by, notes)
+             VALUES (:dept, :cat, :month, :amt, :st, :uid, :notes)'
+        );
+        $stmt->execute([
+            ':dept' => trim((string) $input['department']),
+            ':cat' => isset($input['category_id']) && $input['category_id'] !== '' ? (int) $input['category_id'] : null,
+            ':month' => $input['fiscal_month'],
+            ':amt' => (float) $input['planned_amount'],
+            ':st' => 'submitted',
+            ':uid' => (int) $user['id'],
+            ':notes' => trim((string) ($input['notes'] ?? '')),
+        ]);
+        $id = (int) $this->pdo->lastInsertId();
+        Audit::log($this->pdo, (int) $user['id'], 'finance', 'create_budget', 'department_budgets', $id, null, $input, 'Created budget');
+        Response::json(['success' => true, 'message' => 'Budget submitted', 'data' => ['id' => $id]], 201);
+    }
+
+    public function approveBudget(int $id, array $input): void
+    {
+        $decision = trim((string) ($input['decision'] ?? ''));
+        if (!in_array($decision, ['approved', 'rejected'], true)) {
+            Response::json(['success' => false, 'message' => 'Decision must be approved or rejected'], 422);
+        }
+        $user = Auth::user();
+        if (!$user) {
+            Response::json(['success' => false, 'message' => 'Not authenticated'], 401);
+        }
+        $role = strtolower((string) ($user['role'] ?? ''));
+        if (!str_contains($role, 'admin') && !str_contains($role, 'finance')) {
+            Response::json(['success' => false, 'message' => 'Only Admin or Finance Officer can approve budgets'], 403);
+        }
+
+        $stmt = $this->pdo->prepare(
+            'UPDATE department_budgets SET status = :st, approved_by = :uid, approved_at = NOW() WHERE id = :id AND status = "submitted"'
+        );
+        $stmt->execute([':st' => $decision, ':uid' => (int) $user['id'], ':id' => $id]);
+
+        if ($stmt->rowCount() === 0) {
+            Response::json(['success' => false, 'message' => 'Budget not found or not in submitted state'], 404);
+        }
+        Audit::log($this->pdo, (int) $user['id'], 'finance', "budget_$decision", 'department_budgets', $id, null, ['decision' => $decision], "Budget $decision");
+        Response::json(['success' => true, 'message' => "Budget $decision"]);
+    }
+
+    /* ───── Member Contribution History ───── */
+
+    public function memberContributions(int $memberId): void
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT fe.id, fe.entry_no, fe.entry_date, fc.name AS category_name, fc.category_type,
+                    fe.amount, fe.payment_method, fe.description
+             FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             WHERE fe.member_id = :mid
+             ORDER BY fe.entry_date DESC LIMIT 200"
+        );
+        $stmt->execute([':mid' => $memberId]);
+        $entries = $stmt->fetchAll();
+
+        $totals = $this->pdo->prepare(
+            "SELECT fc.category_type, COALESCE(SUM(fe.amount),0) AS total
+             FROM finance_entries fe
+             INNER JOIN finance_categories fc ON fc.id=fe.category_id
+             WHERE fe.member_id = :mid
+             GROUP BY fc.category_type"
+        );
+        $totals->execute([':mid' => $memberId]);
+
+        $summary = ['income' => 0, 'expense' => 0];
+        foreach ($totals->fetchAll() as $r) {
+            $summary[$r['category_type']] = (float) $r['total'];
+        }
+
+        Response::json(['success' => true, 'data' => ['entries' => $entries, 'summary' => $summary]]);
     }
 
     /* ───── Fallback ───── */

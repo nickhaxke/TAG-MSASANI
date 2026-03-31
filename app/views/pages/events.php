@@ -81,8 +81,8 @@
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Event</th>
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Date</th>
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Budget</th>
-                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Status</th>
-                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Budget Workflow</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Budget Status</th>
+                    <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Workflow</th>
                     <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-mist-600">Open</th>
                 </tr>
             </thead>
@@ -128,11 +128,97 @@ function extractApptWith(notes) {
     return m ? m[1].trim() : '';
 }
 
+// ──── TOAST & FEEDBACK SYSTEM ────
 function showCreateFeedback(message, isError = false) {
     const el = document.getElementById('create-feedback');
     el.classList.remove('hidden');
     el.textContent = message;
     el.className = `mt-3 rounded-xl px-3 py-2 text-sm ${isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`;
+    setTimeout(() => { el.classList.add('hidden'); }, 5000);
+}
+
+function showToast(message, type = 'success', duration = 4000) {
+    // type: 'success', 'error', 'info'
+    const container = document.getElementById('toast-container') || createToastContainer();
+    const toast = document.createElement('div');
+    const bgClass = type === 'error' ? 'bg-red-600' : type === 'info' ? 'bg-royal-600' : 'bg-emerald-600';
+    
+    toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-in fade-in slide-in-from-top-2 mb-2`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('animate-out', 'fade-out', 'slide-out-to-top-2');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'fixed top-6 right-6 z-50 flex flex-col gap-2';
+    document.body.appendChild(container);
+    return container;
+}
+
+// ──── CONFIRMATION DIALOG ────
+function showConfirmDialog(title, message, onConfirm, onCancel = null) {
+    let dialog = document.getElementById('confirm-dialog');
+    if (!dialog) {
+        dialog = document.createElement('div');
+        dialog.id = 'confirm-dialog';
+        dialog.className = 'hidden fixed inset-0 z-50 overflow-y-auto';
+        dialog.innerHTML = `
+            <div class="flex items-center justify-center min-h-screen px-4">
+                <div class="fixed inset-0 bg-gray-900/50" onclick="closeConfirmDialog()"></div>
+                <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+                    <h3 id="confirm-title" class="text-lg font-semibold text-royal-900 mb-2"></h3>
+                    <p id="confirm-message" class="text-mist-600 text-sm mb-6"></p>
+                    <div class="flex gap-3 justify-end">
+                        <button onclick="closeConfirmDialog()" class="px-4 py-2.5 rounded-xl bg-mist-100 text-mist-700 hover:bg-mist-200 text-sm font-semibold transition">Cancel</button>
+                        <button id="confirm-btn" onclick="executeConfirmDialog()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition flex items-center gap-2">
+                            <span id="confirm-btn-text">Confirm</span>
+                            <span id="confirm-spinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dialog);
+    }
+    
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    dialog.classList.remove('hidden');
+    
+    window.confirmDialogCallbacks = { onConfirm, onCancel };
+}
+
+function closeConfirmDialog() {
+    const dialog = document.getElementById('confirm-dialog');
+    if (dialog) dialog.classList.add('hidden');
+    const btn = document.getElementById('confirm-btn');
+    btn.disabled = false;
+    document.getElementById('confirm-spinner').classList.add('hidden');
+    document.getElementById('confirm-btn-text').classList.remove('hidden');
+    if (window.confirmDialogCallbacks?.onCancel) window.confirmDialogCallbacks.onCancel();
+}
+
+async function executeConfirmDialog() {
+    const btn = document.getElementById('confirm-btn');
+    btn.disabled = true;
+    document.getElementById('confirm-spinner').classList.remove('hidden');
+    document.getElementById('confirm-btn-text').classList.add('hidden');
+    
+    if (window.confirmDialogCallbacks?.onConfirm) {
+        try {
+            await window.confirmDialogCallbacks.onConfirm();
+        } catch (e) {
+            console.error('Dialog action failed:', e);
+        }
+    }
+    
+    closeConfirmDialog();
 }
 
 async function loadGroups() {
@@ -159,13 +245,184 @@ function buildBudgetActions(row) {
         return '<span class="text-xs text-mist-500">No budget linked</span>';
     }
 
-    return `
-        <div class="flex flex-wrap items-center gap-2">
-            <a class="text-xs font-semibold text-royal-700 hover:text-royal-900" href="${BASE_URL}/events/${row.id}?tab=budget">Open Budget</a>
-            <span class="text-mist-300">|</span>
-            <a class="text-xs font-semibold text-emerald-700 hover:text-emerald-900" href="${BASE_URL}/finance?event_id=${row.id}">Send To Finance</a>
-        </div>
-    `;
+    const isPending = row.budget_status === 'pending_approval';
+    const isApproved = row.budget_status === 'approved';
+    const isRejected = row.budget_status === 'rejected';
+
+    let html = `<div class="flex flex-wrap items-center gap-2">`;
+    
+    if (isPending) {
+        html += `<span class="text-xs text-amber-600 font-semibold">⏳ Awaiting Approval</span>`;
+    } else if (isApproved) {
+        html += `<button type="button" data-download-receipt="${row.id}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline transition">📄 Receipt</button>`;
+        html += `<span class="text-mist-300">|</span>`;
+    } else if (isRejected) {
+        html += `<span class="text-xs text-red-600 font-semibold">❌ Rejected</span>`;
+    }
+    
+    html += `<a class="text-xs font-semibold text-royal-700 hover:text-royal-900 hover:underline transition" href="${BASE_URL}/events/${row.id}?tab=budget">Edit</a>`;
+    
+    if (!isPending && !isApproved && !isRejected) {
+        html += `<span class="text-mist-300">|</span>`;
+        html += `<button type="button" data-send-budget="${row.id}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline transition">Send To Finance</button>`;
+    }
+    
+    html += `</div>`;
+    return html;
+}
+
+async function sendEventBudgetToFinance(eventId) {
+    const body = document.getElementById('events-body');
+    const row = Array.from(body.querySelectorAll('tr')).find(tr => {
+        const cell = tr.querySelector('[data-send-budget]');
+        return cell && Number(cell.getAttribute('data-send-budget')) === eventId;
+    });
+    
+    if (!row) return;
+    
+    const eventTitle = row.querySelector('td:nth-child(2) p')?.textContent || 'Event';
+    const budgetCell = row.querySelector('td:nth-child(4)')?.textContent || 'TZS 0';
+    
+    showConfirmDialog(
+        'Send Budget to Finance?',
+        `Event: ${eventTitle}\n${budgetCell}\n\nThe accountant will review and approve/reject this budget.`,
+        async () => {
+            try {
+                const res = await fetch(BASE_URL + `/api/v1/events/${eventId}/send-budget`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                });
+
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Failed to send budget');
+                }
+
+                showToast(`✓ Budget sent to Finance. Accountant will review it.`, 'success');
+                await loadEvents();
+            } catch (err) {
+                showToast(`✗ ${err.message}`, 'error');
+            }
+        }
+    );
+}
+
+function downloadBudgetReceipt(eventId) {
+    // Fetch event details and generate a printable receipt
+    fetch(BASE_URL + `/api/v1/events/${eventId}/details`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success || !data.data) {
+                showToast('✗ Unable to load event details', 'error');
+                return;
+            }
+            
+            const overview = data.data.overview;
+            const budget = data.data.budget;
+            const budgetTotal = Number(overview.budget_total || budget.planned_budget || 0);
+            
+            // Budget item rows
+            const itemRows = (budget.items || []).map(i => `
+                <div class="detail-row">
+                    <strong>${i.item_name} <span style="font-weight:normal;color:#888;text-transform:capitalize">(${i.item_type})</span></strong>
+                    <span>TZS ${parseFloat(i.planned_amount || 0).toLocaleString()} ${i.actual_amount > 0 ? '/ Actual: TZS ' + parseFloat(i.actual_amount).toLocaleString() : ''}</span>
+                </div>
+            `).join('');
+            
+            // Create printable HTML
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Budget Receipt - ${overview.title}</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; line-height: 1.6; color: #333; margin: 20px; }
+                        .receipt { max-width: 600px; margin: 0 auto; border: 2px solid #1e3a8a; padding: 30px; background: #f9fafb; }
+                        .header { text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 30px; }
+                        .header h1 { margin: 0; color: #1e3a8a; font-size: 28px; }
+                        .header p { margin: 5px 0 0; color: #666; font-size: 12px; }
+                        .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+                        .detail-row strong { flex: 1; }
+                        .detail-row span { flex: 1; text-align: right; font-weight: 600; }
+                        .total-row { display: flex; justify-content: space-between; padding: 16px; font-size: 18px; font-weight: bold; background: #f0fdf4; margin: 20px 0; border-radius: 4px; }
+                        .total-row span:last-child { color: #10b981; }
+                        .items-section { margin: 20px 0; }
+                        .items-section h3 { font-size: 14px; color: #1e3a8a; margin-bottom: 8px; }
+                        .summary { display: flex; gap: 16px; margin: 16px 0; }
+                        .summary div { flex: 1; padding: 12px; background: #f8fafc; border-radius: 8px; text-align: center; }
+                        .summary div strong { display: block; font-size: 16px; }
+                        .summary div span { font-size: 11px; color: #666; }
+                        .meta { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; }
+                        .approval-stamp { padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin-top: 16px; text-align: center; }
+                        .approval-stamp strong { color: #166534; }
+                        .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #999; }
+                        .no-print { margin-top: 20px; text-align: center; }
+                        @media print { body { margin: 0; } .receipt { border: 1px solid #ccc; } .no-print { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="receipt">
+                        <div class="header">
+                            <h1>📋 BUDGET RECEIPT</h1>
+                            <p>Approved Event Budget</p>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <strong>Event Title:</strong>
+                            <span>${overview.title}</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <strong>Event Code:</strong>
+                            <span>${overview.event_code || 'N/A'}</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <strong>Date:</strong>
+                            <span>${overview.start_datetime ? new Date(overview.start_datetime).toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' }) : (overview.event_date || 'N/A')}</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <strong>Category:</strong>
+                            <span>${overview.category || 'General'}</span>
+                        </div>
+
+                        ${itemRows ? '<div class="items-section"><h3>Budget Items</h3>' + itemRows + '</div>' : ''}
+
+                        <div class="summary">
+                            <div><strong>TZS ${parseFloat(budget.planned_budget || 0).toLocaleString()}</strong><span>Planned</span></div>
+                            <div><strong>TZS ${parseFloat(budget.actual_expenses || 0).toLocaleString()}</strong><span>Actual</span></div>
+                            <div><strong>TZS ${parseFloat(budget.remaining_balance || 0).toLocaleString()}</strong><span>Remaining</span></div>
+                        </div>
+                        
+                        <div class="total-row">
+                            <span>Budget Total:</span>
+                            <span>TZS ${formatMoney(budgetTotal)}</span>
+                        </div>
+                        
+                        ${budget.status === 'approved' ? '<div class="approval-stamp"><strong>✓ APPROVED</strong><br>' + (budget.approved_by ? 'By: ' + budget.approved_by + '<br>' : '') + (budget.approved_at ? 'Date: ' + new Date(budget.approved_at).toLocaleDateString([], {year:'numeric',month:'long',day:'numeric'}) : '') + '</div>' : ''}
+                        
+                        <div class="footer">
+                            <p>This receipt was generated automatically. For inquiries, contact the Finance Department.</p>
+                            <p>Receipt ID: EVT-${overview.id || eventId}-${new Date().getTime()}</p>
+                        </div>
+
+                        <div class="no-print">
+                            <button onclick="window.print()" style="padding:8px 24px;border:none;background:#1e3a5f;color:#fff;border-radius:6px;cursor:pointer;font-size:14px">Print</button>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            const win = window.open('', '_blank');
+            win.document.write(html);
+            win.document.close();
+        })
+        .catch(err => {
+            showToast(`✗ Failed to download receipt: ${err.message}`, 'error');
+        });
 }
 
 async function loadEvents() {
@@ -203,6 +460,24 @@ async function loadEvents() {
     body.innerHTML = rows.map((row) => {
         const dt = new Date(row.start_datetime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
         const budget = Number(row.budget_total || 0);
+        
+        // Build budget status badge
+        let budgetStatusBadge = '';
+        if (budget > 0) {
+            const statusMap = {
+                'draft': { emoji: '💭', label: 'Draft', color: 'bg-slate-100 text-slate-700' },
+                'pending_approval': { emoji: '⏳', label: 'Pending', color: 'bg-amber-100 text-amber-700' },
+                'approved': { emoji: '✅', label: 'Approved', color: 'bg-emerald-100 text-emerald-700' },
+                'rejected': { emoji: '❌', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+                'in_progress': { emoji: '▶️', label: 'In Progress', color: 'bg-blue-100 text-blue-700' },
+                'completed': { emoji: '🏁', label: 'Completed', color: 'bg-purple-100 text-purple-700' }
+            };
+            const statusInfo = statusMap[row.budget_status || 'draft'] || statusMap['draft'];
+            budgetStatusBadge = `<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${statusInfo.color}">${statusInfo.emoji} ${statusInfo.label}</span>`;
+        } else {
+            budgetStatusBadge = '<span class="text-xs text-mist-500">—</span>';
+        }
+        
         return `
             <tr class="hover:bg-mist-50/70">
                 <td class="px-4 py-3 text-xs text-mist-600 font-mono">${row.event_code}</td>
@@ -214,6 +489,7 @@ async function loadEvents() {
                 </td>
                 <td class="px-4 py-3 text-mist-700">${dt}<div class="text-xs text-mist-500">${row.venue || '-'}</div></td>
                 <td class="px-4 py-3 text-mist-700">TZS ${formatMoney(budget)}${budget > 0 ? '<div class="text-xs text-emerald-600 font-semibold">Linked</div>' : ''}</td>
+                <td class="px-4 py-3">${budgetStatusBadge}</td>
                 <td class="px-4 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(row.status)}">${row.status}</span></td>
                 <td class="px-4 py-3">${buildBudgetActions(row)}</td>
                 <td class="px-4 py-3"><a class="text-royal-600 hover:text-royal-800 font-semibold text-xs" href="${BASE_URL}/events/${row.id}">Open</a></td>
@@ -224,6 +500,21 @@ async function loadEvents() {
 
 document.getElementById('apply-filters').addEventListener('click', loadEvents);
 document.getElementById('search-keyword').addEventListener('input', loadEvents);
+document.getElementById('events-body').addEventListener('click', async (e) => {
+    const sendBtn = e.target.closest('[data-send-budget]');
+    if (sendBtn) {
+        const eventId = Number(sendBtn.getAttribute('data-send-budget'));
+        if (eventId) await sendEventBudgetToFinance(eventId);
+        return;
+    }
+    
+    const receiptBtn = e.target.closest('[data-download-receipt]');
+    if (receiptBtn) {
+        const eventId = Number(receiptBtn.getAttribute('data-download-receipt'));
+        if (eventId) downloadBudgetReceipt(eventId);
+        return;
+    }
+});
 
 document.getElementById('event-type').addEventListener('change', (e) => {
     const val = e.target.value;

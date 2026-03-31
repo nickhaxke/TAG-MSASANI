@@ -133,6 +133,24 @@ if (str_starts_with($uri, '/api/v1/')) {
         $method === 'POST' && preg_match('#^/api/v1/events/(\d+)/communicate$#', $uri, $m) === 1
             => $apiController->sendEventCommunication((int) $m[1], json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
 
+        $method === 'POST' && preg_match('#^/api/v1/events/(\d+)/budget-items$#', $uri, $m) === 1
+            => $apiController->createEventBudgetItem((int) $m[1], json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
+
+        $method === 'PUT' && preg_match('#^/api/v1/events/(\d+)/budget-items/(\d+)$#', $uri, $m) === 1
+            => $apiController->updateEventBudgetItem((int) $m[1], (int) $m[2], json_decode((string) file_get_contents('php://input'), true) ?: []),
+
+        $method === 'POST' && preg_match('#^/api/v1/events/(\d+)/budget-items/(\d+)/post-finance$#', $uri, $m) === 1
+            => $apiController->postEventBudgetItemToFinance((int) $m[1], (int) $m[2], json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
+
+        $method === 'POST' && preg_match('#^/api/v1/events/(\d+)/send-budget$#', $uri, $m) === 1
+            => $apiController->sendEventBudgetToFinance((int) $m[1]),
+
+        $method === 'POST' && preg_match('#^/api/v1/events/(\d+)/attendance/register$#', $uri, $m) === 1
+            => $apiController->registerEventParticipant((int) $m[1], json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
+
+        $method === 'PUT' && preg_match('#^/api/v1/events/(\d+)/attendance/(\d+)$#', $uri, $m) === 1
+            => $apiController->updateEventParticipantAttendance((int) $m[1], (int) $m[2], json_decode((string) file_get_contents('php://input'), true) ?: []),
+
         $method === 'GET' && $uri === '/api/v1/meta/groups'
             => $apiController->listGroups(),
 
@@ -144,6 +162,37 @@ if (str_starts_with($uri, '/api/v1/')) {
 
         $method === 'GET' && $uri === '/api/v1/finance/categories'
             => $apiController->listFinanceCategories(),
+
+        /* ── Finance Module ── */
+        $method === 'GET' && $uri === '/api/v1/finance/overview'
+            => $apiController->financeOverview(),
+
+        $method === 'GET' && $uri === '/api/v1/finance/entries/filtered'
+            => $apiController->financeEntries(),
+
+        $method === 'PUT' && preg_match('#^/api/v1/finance/entries/(\d+)/approve$#', $uri, $m) === 1
+            => $apiController->approveFinanceEntry((int) $m[1], json_decode((string) file_get_contents('php://input'), true) ?: []),
+
+        $method === 'GET' && $uri === '/api/v1/finance/pledges'
+            => $apiController->listPledges(),
+
+        $method === 'GET' && $uri === '/api/v1/finance/pledges/stats'
+            => $apiController->pledgeStats(),
+
+        $method === 'POST' && $uri === '/api/v1/finance/pledges'
+            => $apiController->createPledge(json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
+
+        $method === 'GET' && $uri === '/api/v1/finance/budgets'
+            => $apiController->listBudgets(),
+
+        $method === 'POST' && $uri === '/api/v1/finance/budgets'
+            => $apiController->createBudget(json_decode((string) file_get_contents('php://input'), true) ?: $_POST),
+
+        $method === 'PUT' && preg_match('#^/api/v1/finance/budgets/(\d+)/approve$#', $uri, $m) === 1
+            => $apiController->approveBudget((int) $m[1], json_decode((string) file_get_contents('php://input'), true) ?: []),
+
+        $method === 'GET' && preg_match('#^/api/v1/members/(\d+)/contributions$#', $uri, $m) === 1
+            => $apiController->memberContributions((int) $m[1]),
 
         default => $apiController->notFound(),
     };
