@@ -15,8 +15,9 @@ final class PageController
 
     public function loginPage(?string $error = null): void
     {
+        $brand = Response::loadChurchBranding();
         Response::view('pages/login.php', [
-            'title' => 'TAG MSASANI Login',
+            'title' => $brand['church_name'] . ' Login',
             'page'  => 'login',
             'error' => $error,
         ]);
@@ -39,8 +40,9 @@ final class PageController
         $groups = (int) $this->pdo->query("SELECT COUNT(*) FROM `groups`")->fetchColumn();
         $themeVerse = $this->resolveThemeVerse();
 
+        $brand = Response::loadChurchBranding();
         Response::view('pages/dashboard.php', [
-            'title' => 'TAG MSASANI Dashboard',
+            'title' => $brand['church_name'] . ' Dashboard',
             'page'  => 'dashboard',
             'stats' => compact('members', 'income', 'expenses', 'events', 'groups'),
             'themeVerse' => $themeVerse,
@@ -113,5 +115,25 @@ final class PageController
         }
 
         return $themeVerse;
+    }
+
+    public function forgotPasswordPage(?string $error = null, ?string $success = null): void
+    {
+        Response::view('pages/forgot_password.php', [
+            'title'   => 'Forgot Password',
+            'page'    => 'login',
+            'error'   => $error,
+            'success' => $success,
+        ]);
+    }
+
+    public function resetPasswordPage(string $token = '', ?string $error = null): void
+    {
+        Response::view('pages/reset_password.php', [
+            'title' => 'Reset Password',
+            'page'  => 'login',
+            'token' => $token,
+            'error' => $error,
+        ]);
     }
 }

@@ -22,449 +22,23 @@
 <!-- ═══════════ TABS ═══════════ -->
 <div class="mb-6 border-b border-mist-200 overflow-x-auto">
     <nav class="flex gap-1 -mb-px whitespace-nowrap" id="fin-tabs">
-        <button data-tab="muhtasari" class="fin-tab fin-tab-active px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors">Overview</button>
-        <button data-tab="mapato" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Income</button>
-        <button data-tab="matumizi" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Expenses</button>
-        <button data-tab="ahadi" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Pledges</button>
-        <button data-tab="bajeti" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Budgets</button>
-        <button data-tab="idhinisho" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Approvals <span id="approval-badge" class="hidden ml-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full"></span></button>
-        <button data-tab="ripoti" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Reports</button>
+        <button data-tab="summary" class="fin-tab fin-tab-active px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors">Overview</button>
+        <button data-tab="income" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Income</button>
+        <button data-tab="expenses" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Expenses</button>
+        <button data-tab="pledges" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Pledges</button>
+        <button data-tab="budgets" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Budgets</button>
+        <button data-tab="approvals" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Approvals <span id="approval-badge" class="hidden ml-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full"></span></button>
+        <button data-tab="reports" class="fin-tab px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-mist-500 hover:text-royal-700 transition-colors">Reports</button>
     </nav>
 </div>
 
-<!-- ═══════════ TAB 1: MUHTASARI (Dashboard) ═══════════ -->
-<div id="tab-muhtasari" class="fin-panel">
-
-    <!-- ── KPI Cards ─────────────────────────────────────── -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-
-        <!-- Income -->
-        <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl p-5 text-white shadow-md">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                </div>
-                <span class="text-[10px] font-semibold bg-white/20 rounded-full px-2 py-0.5" id="kpi-month-label">Month</span>
-            </div>
-            <p class="text-xl font-extrabold leading-tight" id="kpi-income">TZS 0</p>
-            <p class="text-xs text-emerald-100 mt-1 font-medium">Total Income</p>
-            <div class="mt-3 h-1 rounded-full bg-white/20"><div id="kpi-income-bar" class="h-1 rounded-full bg-white/70 transition-all duration-700" style="width:0%"></div></div>
-        </div>
-
-        <!-- Expenses -->
-        <div class="bg-gradient-to-br from-red-500 to-rose-700 rounded-2xl p-5 text-white shadow-md">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15"/></svg>
-                </div>
-                <span class="text-[10px] font-semibold bg-white/20 rounded-full px-2 py-0.5">Month</span>
-            </div>
-            <p class="text-xl font-extrabold leading-tight" id="kpi-expense">TZS 0</p>
-            <p class="text-xs text-red-100 mt-1 font-medium">Total Expenses</p>
-            <div class="mt-3 h-1 rounded-full bg-white/20"><div id="kpi-expense-bar" class="h-1 rounded-full bg-white/70 transition-all duration-700" style="width:0%"></div></div>
-        </div>
-
-        <!-- Balance -->
-        <div class="bg-gradient-to-br from-royal-700 to-royal-900 rounded-2xl p-5 text-white shadow-md">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                </div>
-                <span id="kpi-balance-label" class="text-[10px] font-semibold bg-white/20 rounded-full px-2 py-0.5">Balance</span>
-            </div>
-            <p class="text-xl font-extrabold leading-tight" id="kpi-balance">TZS 0</p>
-            <p class="text-xs text-blue-200 mt-1 font-medium">Net Balance</p>
-            <p class="text-[10px] text-blue-200 mt-2 font-medium" id="kpi-alltime">All-time: TZS 0</p>
-        </div>
-
-        <!-- Pending Actions -->
-        <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-md">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-                <button onclick="switchToApprovals()" class="text-[10px] font-semibold bg-white/20 hover:bg-white/30 rounded-full px-2 py-0.5 transition">Review</button>
-            </div>
-            <p class="text-xl font-extrabold leading-tight" id="kpi-pending-total">0</p>
-            <p class="text-xs text-amber-100 mt-1 font-medium">Needs Approval</p>
-            <div class="mt-2 flex gap-2 text-[10px]">
-                <span class="bg-white/20 rounded-full px-2 py-0.5">Entries: <b id="pending-entries-count">0</b></span>
-                <span class="bg-white/20 rounded-full px-2 py-0.5">Budgets: <b id="pending-budgets-count">0</b></span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Health Bar ─────────────────────────────────────── -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-4 mb-6">
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-semibold text-gray-700">Monthly Financial Health</span>
-            <span class="text-xs text-gray-400" id="health-label">—</span>
-        </div>
-        <div class="w-full h-3 rounded-full bg-gray-100 overflow-hidden">
-            <div id="health-bar" class="h-3 rounded-full transition-all duration-1000 bg-emerald-500" style="width:0%"></div>
-        </div>
-        <div class="flex justify-between text-[10px] text-gray-400 mt-1.5">
-            <span>Expense-heavy</span><span>Balanced</span><span>Income-surplus</span>
-        </div>
-    </div>
-
-    <!-- ── Charts ─────────────────────────────────────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-5 mb-6">
-        <div class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-gray-800">6-Month Trend</h3>
-                <div class="flex items-center gap-3 text-xs text-gray-500">
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>Income</span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>Expenses</span>
-                </div>
-            </div>
-            <canvas id="trend-chart" height="190"></canvas>
-        </div>
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h3 class="font-bold text-gray-800 mb-4">Category Breakdown</h3>
-            <canvas id="category-chart" height="190"></canvas>
-            <div id="category-legend" class="mt-3 space-y-1.5 max-h-28 overflow-y-auto"></div>
-        </div>
-    </div>
-
-    <!-- ── Pledges + Recent Activity ─────────────────────────────────────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        <!-- Pledge Status -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h3 class="font-bold text-gray-800 mb-4">Pledge Status</h3>
-            <div class="space-y-3">
-                <div class="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-2 h-2 rounded-full bg-amber-400"></div>
-                        <span class="text-sm font-medium text-gray-700">Outstanding</span>
-                    </div>
-                    <span class="text-sm font-bold text-amber-700" id="kpi-pledges">TZS 0</span>
-                </div>
-                <div class="flex items-center justify-between p-3 rounded-xl bg-red-50 border border-red-100">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-2 h-2 rounded-full bg-red-400"></div>
-                        <span class="text-sm font-medium text-gray-700">Entry Approvals</span>
-                    </div>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700" id="pending-entries-count2">0</span>
-                </div>
-                <div class="flex items-center justify-between p-3 rounded-xl bg-purple-50 border border-purple-100">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-2 h-2 rounded-full bg-purple-400"></div>
-                        <span class="text-sm font-medium text-gray-700">Budget Approvals</span>
-                    </div>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700" id="pending-budgets-count2">0</span>
-                </div>
-            </div>
-            <button onclick="switchToApprovals()" class="mt-4 w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition active:scale-95">
-                Go to Approvals →
-            </button>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-gray-800">Recent Activity</h3>
-                <span class="text-xs text-gray-400">Last 10 entries</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="text-left">
-                            <th class="pb-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Date</th>
-                            <th class="pb-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Category</th>
-                            <th class="pb-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Type</th>
-                            <th class="pb-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-tbody" class="divide-y divide-gray-50"></tbody>
-                </table>
-            </div>
-            <div id="recent-empty" class="hidden py-8 text-center text-sm text-gray-400">No recent entries</div>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════ TAB 2: MAPATO ═══════════ -->
-<div id="tab-mapato" class="fin-panel hidden">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-            <h2 class="font-semibold text-gray-800">Income Records</h2>
-            <div class="flex gap-2 flex-wrap">
-                <select id="mapato-cat-filter" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs"><option value="">All Categories</option></select>
-                <input type="date" id="mapato-from" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs">
-                <input type="date" id="mapato-to" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs">
-                <button onclick="loadIncome()" class="px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 font-semibold">Search</button>
-            </div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Entry No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Category</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Member</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Amount (TZS)</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Method</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Receipt</th>
-                    </tr>
-                </thead>
-                <tbody id="mapato-tbody" class="divide-y divide-gray-100"></tbody>
-            </table>
-        </div>
-        <div id="mapato-empty" class="hidden px-5 py-12 text-center text-gray-400">
-            <p class="font-medium">No income records found</p>
-        </div>
-        <div class="px-5 py-3 border-t border-gray-100 flex justify-between items-center">
-            <span id="mapato-count" class="text-sm text-gray-500">0 records</span>
-            <span id="mapato-total" class="text-sm font-bold text-green-600">TZS 0</span>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════ TAB 3: MATUMIZI ═══════════ -->
-<div id="tab-matumizi" class="fin-panel hidden">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-            <h2 class="font-semibold text-gray-800">Expense Records</h2>
-            <div class="flex gap-2 flex-wrap">
-                <select id="matumizi-cat-filter" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs"><option value="">All Categories</option></select>
-                <select id="matumizi-source-filter" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs">
-                    <option value="">All Sources</option>
-                    <option value="manual">Manual</option>
-                    <option value="procurement">Procurement</option>
-                    <option value="event">Event</option>
-                </select>
-                <button onclick="loadExpenses()" class="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 font-semibold">Search</button>
-            </div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Entry No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Category</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Source</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Amount (TZS)</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Method</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Receipt</th>
-                    </tr>
-                </thead>
-                <tbody id="matumizi-tbody" class="divide-y divide-gray-100"></tbody>
-            </table>
-        </div>
-        <div id="matumizi-empty" class="hidden px-5 py-12 text-center text-gray-400">
-            <p class="font-medium">No expense records found</p>
-        </div>
-        <div class="px-5 py-3 border-t border-gray-100 flex justify-between items-center">
-            <span id="matumizi-count" class="text-sm text-gray-500">0 records</span>
-            <span id="matumizi-total" class="text-sm font-bold text-red-600">TZS 0</span>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════ TAB 4: AHADI (Pledges) ═══════════ -->
-<div id="tab-ahadi" class="fin-panel hidden">
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-            <p class="text-2xl font-bold text-gray-900" id="pledge-total-count">0</p>
-            <p class="text-xs text-gray-500">Total Pledges</p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-            <p class="text-2xl font-bold text-green-600" id="pledge-total-pledged">TZS 0</p>
-            <p class="text-xs text-gray-500">Total Pledged</p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-            <p class="text-2xl font-bold text-blue-600" id="pledge-total-paid">TZS 0</p>
-            <p class="text-xs text-gray-500">Total Paid</p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-            <p class="text-2xl font-bold text-amber-600" id="pledge-total-balance">TZS 0</p>
-            <p class="text-xs text-gray-500">Outstanding</p>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="font-semibold text-gray-800">Pledge List</h2>
-            <button onclick="openModal('pledge-modal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl">+ Add Pledge</button>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pledge No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Member</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Campaign</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Amount</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Paid</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Balance</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Due Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="ahadi-tbody" class="divide-y divide-gray-100"></tbody>
-            </table>
-        </div>
-        <div id="ahadi-empty" class="hidden px-5 py-12 text-center text-gray-400">
-            <p class="font-medium">No pledges recorded</p>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════ TAB 5: BAJETI ═══════════ -->
-<div id="tab-bajeti" class="fin-panel hidden">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-            <h2 class="font-semibold text-gray-800">Department Budgets</h2>
-            <div class="flex gap-2">
-                <select id="bajeti-month-filter" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs"></select>
-                <button onclick="openModal('budget-modal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl">+ Add Budget</button>
-            </div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Department</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Month</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Budget</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Spent</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Usage %</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Approved By</th>
-                    </tr>
-                </thead>
-                <tbody id="bajeti-tbody" class="divide-y divide-gray-100"></tbody>
-            </table>
-        </div>
-        <div id="bajeti-empty" class="hidden px-5 py-12 text-center text-gray-400">
-            <p class="font-medium">No budgets prepared</p>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════ TAB 6: IDHINISHO (Approvals) ═══════════ -->
-<div id="tab-idhinisho" class="fin-panel hidden">
-    <!-- Summary bar -->
-    <div class="flex flex-wrap items-center gap-3 mb-5">
-        <h2 class="text-lg font-bold text-royal-800 flex-1">Approval Queue</h2>
-        <span id="appr-entry-count-badge" class="hidden px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold"></span>
-        <span id="appr-budget-count-badge" class="hidden px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold"></span>
-        <button onclick="loadApprovals()" class="px-3 py-1.5 rounded-xl bg-mist-100 hover:bg-mist-200 text-mist-700 text-xs font-semibold transition flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582M20 20v-5h-.581M5.635 19A9 9 0 104.582 9"/></svg>
-            Refresh
-        </button>
-    </div>
-
-    <!-- Finance Entries Pending -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-        <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-amber-400"></div>
-            <h3 class="font-semibold text-gray-800 text-sm">Finance Entries — Pending Approval</h3>
-        </div>
-        <div id="appr-entries-loading" class="px-5 py-6 text-center text-sm text-gray-400">Loading…</div>
-        <div id="appr-entries-wrap" class="hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Entry No</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Category</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Source</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Recorded By</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="appr-entries-tbody" class="divide-y divide-gray-100"></tbody>
-                </table>
-            </div>
-        </div>
-        <div id="appr-entries-empty" class="hidden px-5 py-10 text-center">
-            <div class="w-10 h-10 mx-auto rounded-full bg-emerald-50 flex items-center justify-center mb-2">
-                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <p class="text-sm font-medium text-gray-500">All caught up — no entries pending approval</p>
-        </div>
-        <div id="appr-entries-error" class="hidden px-5 py-6 text-center text-sm text-red-500"></div>
-    </div>
-
-    <!-- Department Budgets Pending -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-purple-400"></div>
-            <h3 class="font-semibold text-gray-800 text-sm">Department Budgets — Pending Approval</h3>
-        </div>
-        <div id="appr-budgets-loading" class="px-5 py-6 text-center text-sm text-gray-400">Loading…</div>
-        <div id="appr-budgets-wrap" class="hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Department</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Month</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Prepared By</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="appr-budgets-tbody" class="divide-y divide-gray-100"></tbody>
-                </table>
-            </div>
-        </div>
-        <div id="appr-budgets-empty" class="hidden px-5 py-10 text-center">
-            <div class="w-10 h-10 mx-auto rounded-full bg-emerald-50 flex items-center justify-center mb-2">
-                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <p class="text-sm font-medium text-gray-500">No department budgets pending approval</p>
-        </div>
-        <div id="appr-budgets-error" class="hidden px-5 py-6 text-center text-sm text-red-500"></div>
-    </div>
-</div>
-
-<!-- ═══════════ TAB 7: RIPOTI ═══════════ -->
-<div id="tab-ripoti" class="fin-panel hidden">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center cursor-pointer hover:border-primary-300 transition-colors" onclick="generateReport('monthly')">
-            <div class="w-12 h-12 mx-auto rounded-xl bg-mist-100 flex items-center justify-center mb-3">
-                <svg class="w-6 h-6 text-royal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            </div>
-            <h3 class="font-semibold text-gray-900">Monthly Report</h3>
-            <p class="text-sm text-gray-500 mt-1">Income, Expenses, Balance</p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center cursor-pointer hover:border-primary-300 transition-colors" onclick="generateReport('category')">
-            <div class="w-12 h-12 mx-auto rounded-xl bg-mist-100 flex items-center justify-center mb-3">
-                <svg class="w-6 h-6 text-royal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
-            </div>
-            <h3 class="font-semibold text-gray-900">Category Report</h3>
-            <p class="text-sm text-gray-500 mt-1">Income & expense breakdown</p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center cursor-pointer hover:border-primary-300 transition-colors" onclick="generateReport('pledge')">
-            <div class="w-12 h-12 mx-auto rounded-xl bg-mist-100 flex items-center justify-center mb-3">
-                <svg class="w-6 h-6 text-royal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <h3 class="font-semibold text-gray-900">Pledge Report</h3>
-            <p class="text-sm text-gray-500 mt-1">Pledge status & payments</p>
-        </div>
-    </div>
-    <div id="report-output" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hidden">
-        <div class="flex items-center justify-between mb-4">
-            <h3 id="report-title" class="font-semibold text-gray-800">Report</h3>
-            <button onclick="printReport()" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z"/></svg>
-                Print
-            </button>
-        </div>
-        <div id="report-content"></div>
-    </div>
-</div>
+<?php include __DIR__ . '/finance/finance_summary.php'; ?>
+<?php include __DIR__ . '/finance/finance_income.php'; ?>
+<?php include __DIR__ . '/finance/finance_expenses.php'; ?>
+<?php include __DIR__ . '/finance/finance_pledges.php'; ?>
+<?php include __DIR__ . '/finance/finance_budget.php'; ?>
+<?php include __DIR__ . '/finance/finance_approvals.php'; ?>
+<?php include __DIR__ . '/finance/finance_reports.php'; ?>
 
 <!-- ═══════════ MODALS ═══════════ -->
 
@@ -583,13 +157,13 @@
     </div>
 </div>
 
-<!-- Add Budget Modal -->
+<!-- Add Budget Request Modal -->
 <div id="budget-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="fixed inset-0 bg-gray-900/50" onclick="closeModal('budget-modal')"></div>
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 z-10">
             <div class="flex items-center justify-between mb-5">
-                <h3 class="text-lg font-bold text-gray-900">New Budget</h3>
+                <h3 class="text-lg font-bold text-gray-900">Request Budget</h3>
                 <button onclick="closeModal('budget-modal')" class="p-1 hover:bg-gray-100 rounded-lg">
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
@@ -597,26 +171,124 @@
             <form id="budget-form" class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                        <input name="department" placeholder="e.g. Worship" required class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Department <span class="text-red-500">*</span></label>
+                        <select name="department" id="budget-dept-select" required class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
+                            <option value="">Loading…</option>
+                        </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Event <span class="text-gray-400 font-normal">(optional)</span></label>
+                        <select name="event_id" id="budget-event-select" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
+                            <option value="">— No event —</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Month <span class="text-red-500">*</span></label>
                         <input type="month" name="fiscal_month" required class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Requested Amount (TZS) <span class="text-red-500">*</span></label>
+                        <input name="planned_amount" type="number" step="1" min="0" required placeholder="0"
+                            class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Budget Amount (TZS)</label>
-                    <input name="planned_amount" type="number" step="0.01" min="0" required class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-red-500">*</span></label>
+                    <input name="description" placeholder="Brief description of the budget purpose..." required class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <input name="notes" placeholder="Budget notes..." class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Expense Category <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <select name="category_id" id="budget-category" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
+                        <option value="">— No category link —</option>
+                    </select>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" onclick="closeModal('budget-modal')" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl">Cancel</button>
-                    <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-sm">Submit</button>
+                    <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-royal-600 hover:bg-royal-700 rounded-xl shadow-sm">Submit Request</button>
                 </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Expense Item Modal -->
+<div id="add-expense-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="fixed inset-0 bg-gray-900/50" onclick="closeModal('add-expense-modal')"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Add Expense</h3>
+                    <p id="expense-budget-label" class="text-xs text-gray-500 mt-0.5"></p>
+                </div>
+                <button onclick="closeModal('add-expense-modal')" class="p-1 hover:bg-gray-100 rounded-lg">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div id="expense-remaining-info" class="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700"></div>
+            <form id="add-expense-form" class="space-y-4">
+                <input type="hidden" id="expense-budget-id" value="">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Item Name <span class="text-red-500">*</span></label>
+                    <input id="expense-item-name" required placeholder="e.g. Sound equipment rental" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Amount (TZS) <span class="text-red-500">*</span></label>
+                        <input id="expense-amount" type="number" step="1" min="1" required placeholder="0" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input id="expense-date" type="date" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <input id="expense-notes" placeholder="Optional notes..." class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal('add-expense-modal')" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-sm">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Close Budget Confirmation Modal -->
+<div id="close-budget-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="fixed inset-0 bg-gray-900/50" onclick="closeModal('close-budget-modal')"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Close Budget</h3>
+                    <p id="close-budget-label" class="text-xs text-gray-500 mt-0.5"></p>
+                </div>
+                <button onclick="closeModal('close-budget-modal')" class="p-1 hover:bg-gray-100 rounded-lg">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div id="close-budget-summary" class="mb-5 space-y-2"></div>
+            <form id="close-budget-form" class="space-y-4">
+                <input type="hidden" id="close-budget-id" value="">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Closing Notes</label>
+                    <input id="close-budget-notes" placeholder="e.g. Event completed successfully..." class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-royal-400">
+                </div>
+                <div class="p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800">
+                    <strong>What happens:</strong> Total expenses will be posted to Finance Entries automatically. The budget will be locked (read-only).
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal('close-budget-modal')" class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm">Close &amp; Post Expenses</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
             </form>
         </div>
     </div>
@@ -763,12 +435,12 @@ document.querySelectorAll('.fin-tab').forEach(btn => {
         document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
 
         const tab = btn.dataset.tab;
-        if (tab === 'muhtasari') loadOverview();
-        else if (tab === 'mapato') loadIncome();
-        else if (tab === 'matumizi') loadExpenses();
-        else if (tab === 'ahadi') { loadPledges(); loadPledgeStats(); }
-        else if (tab === 'bajeti') loadBudgets();
-        else if (tab === 'idhinisho') loadApprovals();
+        if (tab === 'summary') loadOverview();
+        else if (tab === 'income') loadIncome();
+        else if (tab === 'expenses') loadExpenses();
+        else if (tab === 'pledges') { loadPledges(); loadPledgeStats(); }
+        else if (tab === 'budgets') loadBudgets();
+        else if (tab === 'approvals') loadApprovals();
     });
 });
 
@@ -784,21 +456,21 @@ function buildMonthSelector() {
         sel.innerHTML += '<option value="' + val + '"' + (i === 0 ? ' selected' : '') + '>' + label + '</option>';
     }
     sel.addEventListener('change', () => loadOverview());
-
-    const bSel = document.getElementById('bajeti-month-filter');
-    bSel.innerHTML = '<option value="">All Months</option>' + sel.innerHTML;
-    bSel.addEventListener('change', () => loadBudgets());
 }
 
 // ─── Load Categories & Members ───
 async function loadMeta() {
     try {
-        const [catRes, memRes] = await Promise.all([
+        const [catRes, memRes, deptRes, evtRes] = await Promise.all([
             fetch(API + '/finance/categories'),
-            fetch(API + '/members?status=active')
+            fetch(API + '/members?status=active'),
+            fetch(API + '/departments?active=1'),
+            fetch(API + '/events')
         ]);
-        const catData = await catRes.json();
-        const memData = await memRes.json();
+        const catData  = await catRes.json();
+        const memData  = await memRes.json();
+        const deptData = await deptRes.json();
+        const evtData  = await evtRes.json();
         categories = catData.data || [];
 
         const catSel = document.getElementById('entry-category');
@@ -807,12 +479,45 @@ async function loadMeta() {
             catSel.innerHTML += '<option value="' + c.id + '">' + c.name + ' (' + (c.category_type === 'income' ? 'Income' : 'Expense') + ')</option>';
         });
 
-        const mapatoCat = document.getElementById('mapato-cat-filter');
-        const matumiziCat = document.getElementById('matumizi-cat-filter');
+        const incomeCatFilter = document.getElementById('income-cat-filter');
+        const expensesCatFilter = document.getElementById('expenses-cat-filter');
         categories.forEach(c => {
-            if (c.category_type === 'income') mapatoCat.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
-            else matumiziCat.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
+            if (c.category_type === 'income') incomeCatFilter.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
+            else expensesCatFilter.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
         });
+
+        // Populate budget category selector with expense categories only
+        const budgetCat = document.getElementById('budget-category');
+        if (budgetCat) {
+            budgetCat.innerHTML = '<option value="">— No category link —</option>';
+            categories.filter(c => c.category_type === 'expense').forEach(c => {
+                budgetCat.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
+            });
+        }
+
+        // Populate department dropdown in budget modal
+        const deptSel = document.getElementById('budget-dept-select');
+        if (deptSel) {
+            const depts = deptData.data || [];
+            if (depts.length) {
+                deptSel.innerHTML = '<option value="">Select department...</option>';
+                depts.forEach(d => {
+                    deptSel.innerHTML += '<option value="' + d.name + '">' + d.name + '</option>';
+                });
+            } else {
+                deptSel.innerHTML = '<option value="">No departments — add in Settings</option>';
+            }
+        }
+
+        // Populate events dropdown in budget modal
+        const evtSel = document.getElementById('budget-event-select');
+        if (evtSel) {
+            const events = evtData.data || [];
+            evtSel.innerHTML = '<option value="">— No event link —</option>';
+            events.forEach(ev => {
+                evtSel.innerHTML += '<option value="' + ev.id + '">' + ev.title + (ev.event_date ? ' (' + ev.event_date + ')' : '') + '</option>';
+            });
+        }
 
         const members = memData.data || [];
         ['entry-member', 'pledge-member'].forEach(selId => {
@@ -825,7 +530,7 @@ async function loadMeta() {
     } catch (e) { console.error('Meta load failed:', e); }
 }
 
-// ═══════════ TAB 1: MUHTASARI ═══════════
+// ═══════════ TAB 1: SUMMARY ═══════════
 async function loadOverview() {
     const month = document.getElementById('fin-month-select').value;
     try {
@@ -920,7 +625,7 @@ async function loadOverview() {
 }
 
 function switchToApprovals() {
-    document.querySelector('[data-tab="idhinisho"]')?.click();
+    document.querySelector('[data-tab="approvals"]')?.click();
 }
 
 function renderTrendChart(trend) {
@@ -1015,7 +720,7 @@ function renderCategoryChart(breakdown) {
     ).join('') + (breakdown.length > 6 ? '<p class="text-[10px] text-gray-400 text-center mt-1">+' + (breakdown.length - 6) + ' more</p>' : '');
 }
 
-// ═══════════ TAB 2: MAPATO ═══════════
+// ═══════════ TAB 2: INCOME ═══════════
 // shared row renderer used by both income and expense tabs
 function renderEntryRow(r, amountClass, showSource) {
     const isPending  = r.approval_status === 'pending';
@@ -1042,9 +747,9 @@ function renderEntryRow(r, amountClass, showSource) {
 }
 
 async function loadIncome() {
-    const cat = document.getElementById('mapato-cat-filter').value;
-    const from = document.getElementById('mapato-from').value;
-    const to = document.getElementById('mapato-to').value;
+    const cat = document.getElementById('income-cat-filter').value;
+    const from = document.getElementById('income-from').value;
+    const to = document.getElementById('income-to').value;
     let url = API + '/finance/entries/filtered?type=income';
     if (cat) url += '&category=' + cat;
     if (from) url += '&date_from=' + from;
@@ -1052,8 +757,8 @@ async function loadIncome() {
     try {
         const res = await fetch(url);
         const rows = (await res.json()).data || [];
-        const tbody = document.getElementById('mapato-tbody');
-        const empty = document.getElementById('mapato-empty');
+        const tbody = document.getElementById('income-tbody');
+        const empty = document.getElementById('income-empty');
         if (rows.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); }
         else {
             empty.classList.add('hidden');
@@ -1061,25 +766,27 @@ async function loadIncome() {
         }
         // Totals only sum approved entries
         const approvedRows = rows.filter(r => !r.approval_status || r.approval_status === 'approved');
-        document.getElementById('mapato-count').textContent = approvedRows.length + ' approved' + (rows.length > approvedRows.length ? ' (' + (rows.length - approvedRows.length) + ' pending)' : '');
-        document.getElementById('mapato-total').textContent = fmt(approvedRows.reduce((s, r) => s + parseFloat(r.amount), 0));
+        document.getElementById('income-count').textContent = approvedRows.length + ' approved' + (rows.length > approvedRows.length ? ' (' + (rows.length - approvedRows.length) + ' pending)' : '');
+        document.getElementById('income-total').textContent = fmt(approvedRows.reduce((s, r) => s + parseFloat(r.amount), 0));
     } catch (e) { console.error('Income failed:', e); }
 }
 
-// ═══════════ TAB 3: MATUMIZI ═══════════
+// ═══════════ TAB 3: EXPENSES ═══════════
 async function loadExpenses() {
-    const cat = document.getElementById('matumizi-cat-filter').value;
-    const from = document.getElementById('matumizi-from')?.value || '';
-    const to   = document.getElementById('matumizi-to')?.value   || '';
+    const cat = document.getElementById('expenses-cat-filter').value;
+    const src = document.getElementById('expenses-source-filter')?.value || '';
+    const from = document.getElementById('expenses-from')?.value || '';
+    const to   = document.getElementById('expenses-to')?.value   || '';
     let url = API + '/finance/entries/filtered?type=expense';
     if (cat) url += '&category=' + cat;
+    if (src) url += '&source_type=' + src;
     if (from) url += '&date_from=' + from;
     if (to)   url += '&date_to=' + to;
     try {
         const res = await fetch(url);
         const rows = (await res.json()).data || [];
-        const tbody = document.getElementById('matumizi-tbody');
-        const empty = document.getElementById('matumizi-empty');
+        const tbody = document.getElementById('expenses-tbody');
+        const empty = document.getElementById('expenses-empty');
         if (rows.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); }
         else {
             empty.classList.add('hidden');
@@ -1087,18 +794,18 @@ async function loadExpenses() {
         }
         // Totals only sum approved entries
         const approvedRows = rows.filter(r => !r.approval_status || r.approval_status === 'approved');
-        document.getElementById('matumizi-count').textContent = approvedRows.length + ' approved' + (rows.length > approvedRows.length ? ' (' + (rows.length - approvedRows.length) + ' pending)' : '');
-        document.getElementById('matumizi-total').textContent = fmt(approvedRows.reduce((s, r) => s + parseFloat(r.amount), 0));
+        document.getElementById('expenses-count').textContent = approvedRows.length + ' approved' + (rows.length > approvedRows.length ? ' (' + (rows.length - approvedRows.length) + ' pending)' : '');
+        document.getElementById('expenses-total').textContent = fmt(approvedRows.reduce((s, r) => s + parseFloat(r.amount), 0));
     } catch (e) { console.error('Expenses failed:', e); }
 }
 
-// ═══════════ TAB 4: AHADI ═══════════
+// ═══════════ TAB 4: PLEDGES ═══════════
 async function loadPledges() {
     try {
         const res = await fetch(API + '/finance/pledges');
         const rows = (await res.json()).data || [];
-        const tbody = document.getElementById('ahadi-tbody');
-        const empty = document.getElementById('ahadi-empty');
+        const tbody = document.getElementById('pledges-tbody');
+        const empty = document.getElementById('pledges-empty');
         const sc = { active:'bg-blue-100 text-blue-800', completed:'bg-green-100 text-green-800', overdue:'bg-red-100 text-red-800', cancelled:'bg-gray-100 text-gray-800' };
         if (rows.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); }
         else {
@@ -1133,40 +840,287 @@ async function loadPledgeStats() {
     } catch (e) { console.error('Pledge stats failed:', e); }
 }
 
-// ═══════════ TAB 5: BAJETI ═══════════
+// ═══════════ TAB 5: BUDGETS ═══════════
+let allBudgets = [];
+let currentDetailBudget = null;
+
+// Budget sub-tab switching
+document.querySelectorAll('.btab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.btab').forEach(t => { t.classList.remove('btab-active','border-royal-600','text-royal-700','bg-white'); t.classList.add('border-transparent','text-gray-500'); });
+        btn.classList.add('btab-active','border-royal-600','text-royal-700','bg-white');
+        btn.classList.remove('border-transparent','text-gray-500');
+        document.querySelectorAll('.btab-panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById('btab-' + btn.dataset.btab).classList.remove('hidden');
+    });
+});
+
 async function loadBudgets() {
-    const month = document.getElementById('bajeti-month-filter').value;
-    let url = API + '/finance/budgets';
-    if (month) url += '?month=' + month;
     try {
-        const res = await fetch(url);
-        const rows = (await res.json()).data || [];
-        const tbody = document.getElementById('bajeti-tbody');
-        const empty = document.getElementById('bajeti-empty');
-        const sc = { draft:'bg-gray-100 text-gray-800', submitted:'bg-amber-100 text-amber-800', approved:'bg-green-100 text-green-800', rejected:'bg-red-100 text-red-800' };
-        if (rows.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); }
-        else {
-            empty.classList.add('hidden');
-            tbody.innerHTML = rows.map(r => {
-                const pct = parseFloat(r.percent_used) || 0;
-                const barColor = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-green-500';
-                return '<tr class="hover:bg-gray-50">' +
-                    '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + r.department + '</td>' +
-                    '<td class="px-4 py-3 text-xs text-gray-600">' + r.fiscal_month + '</td>' +
-                    '<td class="px-4 py-3 text-right font-semibold text-gray-900">' + fmt(r.planned_amount) + '</td>' +
-                    '<td class="px-4 py-3 text-right text-red-600 font-medium">' + fmt(r.spent_amount) + '</td>' +
-                    '<td class="px-4 py-3"><div class="flex items-center gap-2">' +
-                    '<div class="w-20 bg-gray-200 rounded-full h-2"><div class="' + barColor + ' h-2 rounded-full" style="width:' + Math.min(pct,100) + '%"></div></div>' +
-                    '<span class="text-xs ' + (pct>=90?'text-red-600 font-bold':'text-gray-500') + '">' + pct + '%</span>' +
-                    (pct >= 90 ? ' <span class="text-xs">⚠️</span>' : '') + '</div></td>' +
-                    '<td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ' + (sc[r.status]||'') + '">' + r.status + '</span></td>' +
-                    '<td class="px-4 py-3 text-xs text-gray-600">' + (r.approved_by_name || '-') + '</td></tr>';
-            }).join('');
-        }
+        const res = await fetch(API + '/finance/budgets');
+        allBudgets = (await res.json()).data || [];
+        renderBudgetRequests();
+        renderActiveBudgets();
+        renderClosedBudgets();
+        renderTrailReport();
     } catch (e) { console.error('Budgets failed:', e); }
 }
 
-// ═══════════ TAB 6: IDHINISHO ═══════════
+function budgetLabel(r) {
+    return (r.event_title ? r.event_title + ' — ' : '') + r.department;
+}
+
+function renderBudgetRequests() {
+    const rows = allBudgets.filter(r => r.status === 'submitted' || r.status === 'draft' || r.status === 'rejected');
+    const tbody = document.getElementById('budget-requests-tbody');
+    const empty = document.getElementById('budget-requests-empty');
+    const sc = { draft:'bg-gray-100 text-gray-600', submitted:'bg-amber-100 text-amber-800', rejected:'bg-red-100 text-red-800' };
+    if (!rows.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    tbody.innerHTML = rows.map(r =>
+        '<tr class="hover:bg-gray-50">' +
+        '<td class="px-4 py-3 text-sm font-semibold text-gray-900">' + budgetLabel(r) + '</td>' +
+        '<td class="px-4 py-3 text-xs text-gray-600">' + r.fiscal_month + '</td>' +
+        '<td class="px-4 py-3 text-right font-semibold text-gray-900">' + fmt(r.planned_amount) + '</td>' +
+        '<td class="px-4 py-3 text-xs text-gray-600 max-w-[200px] truncate">' + (r.description || r.notes || '—') + '</td>' +
+        '<td class="px-4 py-3 text-xs text-gray-600">' + (r.submitted_by_name || '—') + '</td>' +
+        '<td class="px-4 py-3 text-xs text-gray-500">' + (r.created_at ? r.created_at.substring(0,10) : '—') + '</td>' +
+        '<td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ' + (sc[r.status]||'') + '">' + r.status + '</span></td>' +
+        '</tr>'
+    ).join('');
+}
+
+function renderActiveBudgets() {
+    const rows = allBudgets.filter(r => r.status === 'approved' || r.status === 'expenses_added');
+    const tbody = document.getElementById('active-budgets-tbody');
+    const empty = document.getElementById('active-budgets-empty');
+    if (!rows.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    tbody.innerHTML = rows.map(r => {
+        const planned = parseFloat(r.planned_amount) || 0;
+        const used = parseFloat(r.total_used) || parseFloat(r.actual_amount) || 0;
+        const reserved = parseFloat(r.reserved_amount) || 0;
+        const available = planned - used - reserved;
+        const pct = planned > 0 ? Math.round((used + reserved) / planned * 100) : 0;
+        const barColor = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-blue-500';
+        return '<tr class="hover:bg-gray-50 cursor-pointer" onclick=\'openBudgetDetail(' + JSON.stringify(r).replace(/'/g,"&#39;") + ')\'>' +
+            '<td class="px-4 py-3 text-sm font-semibold text-royal-700">' + budgetLabel(r) + '</td>' +
+            '<td class="px-4 py-3 text-xs text-gray-600">' + r.fiscal_month + '</td>' +
+            '<td class="px-4 py-3 text-right font-semibold text-gray-900">' + fmt(planned) + '</td>' +
+            '<td class="px-4 py-3 text-right font-semibold text-amber-600">' + fmt(reserved) + '</td>' +
+            '<td class="px-4 py-3 text-right font-semibold text-red-600">' + fmt(used) + '</td>' +
+            '<td class="px-4 py-3 text-right font-semibold ' + (available < 0 ? 'text-red-600' : 'text-emerald-600') + '">' + fmt(available) + '</td>' +
+            '<td class="px-4 py-3"><div class="flex items-center gap-1.5">' +
+                '<div class="w-16 bg-gray-200 rounded-full h-1.5"><div class="' + barColor + ' h-1.5 rounded-full" style="width:' + Math.min(pct,100) + '%"></div></div>' +
+                '<span class="text-xs ' + (pct>=90?'text-red-600 font-bold':'text-gray-500') + '">' + pct + '%</span></div></td>' +
+            '<td class="px-4 py-3 text-center"><button onclick="event.stopPropagation();openBudgetDetail(' + JSON.stringify(r).replace(/'/g,"&#39;") + ')" class="px-3 py-1.5 text-xs bg-royal-600 hover:bg-royal-700 text-white rounded-lg font-semibold">View</button></td></tr>';
+    }).join('');
+}
+
+function renderClosedBudgets() {
+    const rows = allBudgets.filter(r => r.status === 'closed');
+    const tbody = document.getElementById('closed-budgets-tbody');
+    const empty = document.getElementById('closed-budgets-empty');
+    if (!rows.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    tbody.innerHTML = rows.map(r => {
+        const planned = parseFloat(r.planned_amount) || 0;
+        const used = parseFloat(r.total_used) || parseFloat(r.actual_amount) || 0;
+        const surplus = planned - used;
+        return '<tr class="hover:bg-gray-50 opacity-80">' +
+            '<td class="px-4 py-3 text-sm font-medium text-gray-700">' + budgetLabel(r) + '</td>' +
+            '<td class="px-4 py-3 text-xs text-gray-600">' + r.fiscal_month + '</td>' +
+            '<td class="px-4 py-3 text-right font-semibold text-gray-700">' + fmt(planned) + '</td>' +
+            '<td class="px-4 py-3 text-right font-semibold text-red-600">' + fmt(used) + '</td>' +
+            '<td class="px-4 py-3 text-right font-semibold ' + (surplus < 0 ? 'text-red-500' : 'text-emerald-600') + '">' + fmt(surplus) + '</td>' +
+            '<td class="px-4 py-3 text-xs text-gray-500">' + (r.closed_at ? r.closed_at.substring(0,10) : '—') + '</td>' +
+            '<td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">Closed</span>' +
+            (r.finance_entry_id ? ' <span class="text-[10px] text-green-600">Posted ✓</span>' : '') + '</td></tr>';
+    }).join('');
+}
+
+function renderTrailReport() {
+    const rows = allBudgets.filter(r => r.status !== 'draft');
+    const tbody = document.getElementById('trail-tbody');
+    const sc = { submitted:'bg-amber-100 text-amber-800', approved:'bg-green-100 text-green-800', rejected:'bg-red-100 text-red-800', expenses_added:'bg-blue-100 text-blue-800', closed:'bg-purple-100 text-purple-700' };
+    let totalApproved = 0, totalUsed = 0, totalReserved = 0, totalAvailable = 0;
+
+    tbody.innerHTML = rows.map(r => {
+        const planned = parseFloat(r.planned_amount) || 0;
+        const used = parseFloat(r.total_used) || parseFloat(r.actual_amount) || 0;
+        const reserved = parseFloat(r.reserved_amount) || 0;
+        const available = planned - used - reserved;
+        if (r.status !== 'submitted' && r.status !== 'rejected') {
+            totalApproved += planned;
+            totalUsed += used;
+            totalReserved += reserved;
+            totalAvailable += available;
+        }
+        return '<tr class="hover:bg-gray-50">' +
+            '<td class="px-3 py-2 text-sm font-medium text-gray-800">' + budgetLabel(r) + '</td>' +
+            '<td class="px-3 py-2 text-xs text-gray-600">' + r.fiscal_month + '</td>' +
+            '<td class="px-3 py-2 text-right text-sm font-medium text-gray-700">' + fmt(parseFloat(r.planned_amount) || 0) + '</td>' +
+            '<td class="px-3 py-2 text-right text-sm font-semibold text-gray-900">' + fmt(planned) + '</td>' +
+            '<td class="px-3 py-2 text-right text-sm font-semibold text-amber-600">' + fmt(reserved) + '</td>' +
+            '<td class="px-3 py-2 text-right text-sm font-semibold text-red-600">' + fmt(used) + '</td>' +
+            '<td class="px-3 py-2 text-right text-sm font-semibold ' + (available < 0 ? 'text-red-500' : 'text-emerald-600') + '">' + fmt(available) + '</td>' +
+            '<td class="px-3 py-2"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ' + (sc[r.status]||'bg-gray-100 text-gray-600') + '">' + r.status + '</span></td></tr>';
+    }).join('');
+
+    document.getElementById('trail-total-budgets').textContent = rows.length;
+    document.getElementById('trail-total-approved').textContent = fmt(totalApproved);
+    document.getElementById('trail-total-reserved').textContent = fmt(totalReserved);
+    document.getElementById('trail-total-used').textContent = fmt(totalUsed);
+    document.getElementById('trail-total-remaining').textContent = fmt(totalAvailable);
+}
+
+function printBudgetTrail() {
+    const content = document.getElementById('trail-report-content').innerHTML;
+    const w = window.open('', '_blank');
+    w.document.write('<html><head><title>Budget Trail Report</title><link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"></head><body class="p-8"><h1 class="text-xl font-bold mb-4">Budget Trail Report</h1>' + content + '</body></html>');
+    w.document.close();
+    w.print();
+}
+
+// ── Active Budget Detail View ──
+async function openBudgetDetail(r) {
+    if (typeof r === 'string') r = JSON.parse(r);
+    currentDetailBudget = r;
+    const planned = parseFloat(r.planned_amount) || 0;
+    const used = parseFloat(r.total_used) || parseFloat(r.actual_amount) || 0;
+    const reserved = parseFloat(r.reserved_amount) || 0;
+    const available = planned - used - reserved;
+    const pct = planned > 0 ? Math.round((used + reserved) / planned * 100) : 0;
+
+    document.getElementById('detail-budget-title').textContent = budgetLabel(r);
+    document.getElementById('detail-budget-meta').textContent = r.fiscal_month + (r.description ? ' — ' + r.description : '');
+    document.getElementById('detail-approved').textContent = fmt(planned);
+    document.getElementById('detail-reserved').textContent = fmt(reserved);
+    document.getElementById('detail-used').textContent = fmt(used);
+    document.getElementById('detail-remaining').textContent = fmt(available);
+
+    const barColor = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-blue-500';
+    const bar = document.getElementById('detail-progress-bar');
+    bar.className = barColor + ' h-2 rounded-full transition-all duration-500';
+    bar.style.width = Math.min(pct, 100) + '%';
+    document.getElementById('detail-progress-label').textContent = pct + '% committed';
+
+    // Show detail, hide list
+    document.getElementById('active-budgets-list').classList.add('hidden');
+    document.getElementById('active-budget-detail').classList.remove('hidden');
+
+    // Update expense modal label
+    document.getElementById('expense-budget-label').textContent = budgetLabel(r) + ' — ' + r.fiscal_month;
+    document.getElementById('expense-budget-id').value = r.id;
+    document.getElementById('expense-remaining-info').innerHTML = '<b>Approved:</b> ' + fmt(planned) + ' | <b>Reserved:</b> ' + fmt(reserved) + ' | <b>Used:</b> ' + fmt(used) + ' | <b>Available:</b> ' + fmt(available);
+
+    // Load expense items
+    await loadBudgetExpenses(r.id);
+}
+
+function closeBudgetDetail() {
+    document.getElementById('active-budget-detail').classList.add('hidden');
+    document.getElementById('active-budgets-list').classList.remove('hidden');
+    currentDetailBudget = null;
+}
+
+async function loadBudgetExpenses(budgetId) {
+    try {
+        const res = await fetch(API + '/finance/budgets/' + budgetId + '/expenses');
+        const items = (await res.json()).data || [];
+        const tbody = document.getElementById('detail-expenses-tbody');
+        const empty = document.getElementById('detail-expenses-empty');
+        if (!items.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        tbody.innerHTML = items.map(e =>
+            '<tr class="hover:bg-gray-50">' +
+            '<td class="px-3 py-2 text-sm font-medium text-gray-800">' + e.item_name + '</td>' +
+            '<td class="px-3 py-2 text-right text-sm font-semibold text-red-600">' + fmt(e.amount) + '</td>' +
+            '<td class="px-3 py-2 text-xs text-gray-500">' + e.expense_date + '</td>' +
+            '<td class="px-3 py-2 text-xs text-gray-500">' + (e.notes || '—') + '</td>' +
+            '<td class="px-3 py-2 text-xs text-gray-500">' + (e.recorded_by_name || '—') + '</td>' +
+            '<td class="px-3 py-2 text-center"><button onclick="deleteExpenseItem(' + budgetId + ',' + e.id + ')" class="text-xs text-red-500 hover:text-red-700 font-semibold">Remove</button></td></tr>'
+        ).join('');
+    } catch (e) { console.error('Load expenses failed:', e); }
+}
+
+// Add expense form
+document.getElementById('add-expense-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const budgetId = document.getElementById('expense-budget-id').value;
+    const payload = {
+        item_name: document.getElementById('expense-item-name').value,
+        amount: document.getElementById('expense-amount').value,
+        expense_date: document.getElementById('expense-date').value || new Date().toISOString().substring(0,10),
+        notes: document.getElementById('expense-notes').value,
+    };
+    try {
+        const res = await fetch(API + '/finance/budgets/' + budgetId + '/expenses', {
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed');
+        showToast('Expense added', 'success');
+        closeModal('add-expense-modal');
+        this.reset();
+        document.getElementById('expense-budget-id').value = budgetId;
+        // Reload data and refresh detail
+        await loadBudgets();
+        const updated = allBudgets.find(b => b.id == budgetId);
+        if (updated) openBudgetDetail(updated);
+    } catch (err) { showToast(err.message, 'error'); }
+});
+
+async function deleteExpenseItem(budgetId, expenseId) {
+    if (!confirm('Remove this expense item?')) return;
+    try {
+        const res = await fetch(API + '/finance/budgets/' + budgetId + '/expenses/' + expenseId, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed');
+        showToast('Expense removed', 'success');
+        await loadBudgets();
+        const updated = allBudgets.find(b => b.id == budgetId);
+        if (updated) openBudgetDetail(updated);
+    } catch (err) { showToast(err.message, 'error'); }
+}
+
+// Close budget from detail view
+function openCloseBudgetFromDetail() {
+    const r = currentDetailBudget;
+    if (!r) return;
+    const planned = parseFloat(r.planned_amount) || 0;
+    const used = parseFloat(r.total_used) || parseFloat(r.actual_amount) || 0;
+    const remaining = planned - used;
+    document.getElementById('close-budget-id').value = r.id;
+    document.getElementById('close-budget-label').textContent = budgetLabel(r) + ' — ' + r.fiscal_month;
+    document.getElementById('close-budget-notes').value = '';
+    document.getElementById('close-budget-summary').innerHTML =
+        '<div class="grid grid-cols-3 gap-3">' +
+        '<div class="p-3 bg-blue-50 rounded-xl text-center"><p class="text-sm font-bold text-blue-700">' + fmt(planned) + '</p><p class="text-xs text-blue-500">Approved</p></div>' +
+        '<div class="p-3 bg-red-50 rounded-xl text-center"><p class="text-sm font-bold text-red-700">' + fmt(used) + '</p><p class="text-xs text-red-500">Total Used</p></div>' +
+        '<div class="p-3 ' + (remaining >= 0 ? 'bg-emerald-50' : 'bg-orange-50') + ' rounded-xl text-center"><p class="text-sm font-bold ' + (remaining >= 0 ? 'text-emerald-700' : 'text-orange-700') + '">' + fmt(Math.abs(remaining)) + '</p><p class="text-xs ' + (remaining >= 0 ? 'text-emerald-500' : 'text-orange-500') + '">' + (remaining >= 0 ? 'Remaining' : 'Over budget') + '</p></div></div>';
+    openModal('close-budget-modal');
+}
+
+document.getElementById('close-budget-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id    = document.getElementById('close-budget-id').value;
+    const notes = document.getElementById('close-budget-notes').value;
+    try {
+        const res = await fetch(API + '/finance/budgets/' + id + '/close', {
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ notes })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed');
+        closeModal('close-budget-modal');
+        closeBudgetDetail();
+        showToast('Budget closed — expenses posted to finance entries', 'success');
+        loadBudgets();
+        loadOverview();
+    } catch (err) { showToast(err.message, 'error'); }
+});
+
+// ═══════════ TAB 6: APPROVALS ═══════════
 async function loadApprovals() {
     // --- helpers ---
     function setApprState(prefix, state, msg) {
@@ -1504,7 +1458,7 @@ async function approveBudget(id, decision) {
     }
 }
 
-// ═══════════ TAB 7: RIPOTI ═══════════
+// ═══════════ TAB 7: REPORTS ═══════════
 async function generateReport(type) {
     const output = document.getElementById('report-output');
     const content = document.getElementById('report-content');
@@ -1519,11 +1473,11 @@ async function generateReport(type) {
             const d = (await res.json()).data;
             content.innerHTML =
                 '<div class="grid grid-cols-3 gap-4 mb-4">' +
-                '<div class="p-4 bg-green-50 rounded-xl text-center"><p class="text-lg font-bold text-green-700">' + fmt(d.month_income) + '</p><p class="text-xs text-green-600">Mapato</p></div>' +
-                '<div class="p-4 bg-red-50 rounded-xl text-center"><p class="text-lg font-bold text-red-700">' + fmt(d.month_expense) + '</p><p class="text-xs text-red-600">Matumizi</p></div>' +
-                '<div class="p-4 bg-blue-50 rounded-xl text-center"><p class="text-lg font-bold text-blue-700">' + fmt(d.month_balance) + '</p><p class="text-xs text-blue-600">Salio</p></div></div>' +
-                '<h4 class="font-semibold text-sm mb-2">Mgawanyo wa Kategoria</h4>' +
-                '<table class="w-full text-sm"><thead><tr class="text-left text-xs text-gray-500 uppercase border-b"><th class="pb-2">Kategoria</th><th class="pb-2">Aina</th><th class="pb-2 text-right">Kiasi</th></tr></thead><tbody>' +
+                '<div class="p-4 bg-green-50 rounded-xl text-center"><p class="text-lg font-bold text-green-700">' + fmt(d.month_income) + '</p><p class="text-xs text-green-600">Income</p></div>' +
+                '<div class="p-4 bg-red-50 rounded-xl text-center"><p class="text-lg font-bold text-red-700">' + fmt(d.month_expense) + '</p><p class="text-xs text-red-600">Expenses</p></div>' +
+                '<div class="p-4 bg-blue-50 rounded-xl text-center"><p class="text-lg font-bold text-blue-700">' + fmt(d.month_balance) + '</p><p class="text-xs text-blue-600">Balance</p></div></div>' +
+                '<h4 class="font-semibold text-sm mb-2">Category Breakdown</h4>' +
+                '<table class="w-full text-sm"><thead><tr class="text-left text-xs text-gray-500 uppercase border-b"><th class="pb-2">Category</th><th class="pb-2">Type</th><th class="pb-2 text-right">Amount</th></tr></thead><tbody>' +
                 (d.category_breakdown||[]).map(c =>
                     '<tr class="border-b border-gray-50"><td class="py-2">' + c.name + '</td><td class="py-2"><span class="px-2 py-0.5 rounded text-xs ' + (c.category_type==='income'?'bg-green-100 text-green-800':'bg-red-100 text-red-800') + '">' + c.category_type + '</span></td><td class="py-2 text-right font-medium">' + fmt(c.total) + '</td></tr>'
                 ).join('') + '</tbody></table>';

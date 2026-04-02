@@ -26,7 +26,7 @@ $menu = [
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htmlspecialchars($title) ?> - TAG MSASANI</title>
+    <title><?= htmlspecialchars($title) ?> - <?= htmlspecialchars($churchName ?? 'Church CMS') ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -50,7 +50,26 @@ $menu = [
         }
     </script>
     <link rel="stylesheet" href="<?= $B ?>/assets/css/app.css">
+    <meta name="csrf-token" content="<?= htmlspecialchars(\App\Core\Auth::getCsrfToken()) ?>">
     <script>const BASE_URL = '<?= $B ?>';</script>
+    <script>
+    /* ── Global CSRF for all fetch() calls ── */
+    const CSRF_TOKEN = document.currentScript.parentElement.querySelector('meta[name="csrf-token"]')?.content || '';
+    (function(){
+        const _origFetch = window.fetch;
+        window.fetch = function(url, opts) {
+            opts = opts || {};
+            if (opts.method && opts.method.toUpperCase() !== 'GET') {
+                if (opts.headers instanceof Headers) {
+                    if (!opts.headers.has('X-CSRF-TOKEN')) opts.headers.set('X-CSRF-TOKEN', CSRF_TOKEN);
+                } else {
+                    opts.headers = Object.assign({'X-CSRF-TOKEN': CSRF_TOKEN}, opts.headers || {});
+                }
+            }
+            return _origFetch.call(this, url, opts);
+        };
+    })();
+    </script>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Nunito', sans-serif; margin: 0; padding: 0; }
@@ -60,7 +79,7 @@ $menu = [
 
 <?php if ($page === 'login'): ?>
 <body class="h-full font-body bg-mist-50">
-    <?php require __DIR__ . '/../pages/login.php'; ?>
+    <?php require __DIR__ . '/../' . $viewPath; ?>
 </body>
 </html>
 <?php return; endif; ?>
@@ -70,13 +89,17 @@ $menu = [
 
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-72 bg-gradient-to-b from-royal-900 via-royal-800 to-dawn-900 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out flex flex-col shadow-2xl shadow-royal-900/40">
         <div class="flex items-center gap-3 px-5 py-6 border-b border-white/10">
+            <?php if (!empty($churchLogo)): ?>
+                <img src="<?= htmlspecialchars($baseUrl . $churchLogo) ?>" alt="<?= htmlspecialchars($churchName ?? '') ?>" class="w-11 h-11 rounded-2xl object-cover shadow-md">
+            <?php else: ?>
             <div class="w-11 h-11 rounded-2xl bg-glory-500/90 text-royal-900 flex items-center justify-center shadow-md">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M8 7h8M9 13h6"/>
                 </svg>
             </div>
+            <?php endif; ?>
             <div>
-                <h1 class="text-white font-heading font-semibold text-2xl leading-tight">TAG MSASANI</h1>
+                <h1 class="text-white font-heading font-semibold text-2xl leading-tight"><?= htmlspecialchars($churchName ?? 'Church CMS') ?></h1>
                 <p class="text-white/70 text-xs tracking-wide">Church Management System</p>
             </div>
         </div>
@@ -167,7 +190,7 @@ $menu = [
         </main>
 
         <footer id="app-footer" class="border-t border-mist-200 px-6 py-3 text-center text-xs text-mist-500 bg-white/70">
-            &copy; <?= date('Y') ?> TAG MSASANI - Church Management Platform
+            &copy; <?= date('Y') ?> <?= htmlspecialchars($churchName ?? 'Church CMS') ?> - Church Management Platform
         </footer>
     </div>
 </div>
