@@ -77,11 +77,8 @@ $menu = [
     </style>
 </head>
 
-<?php if ($page === 'login'): ?>
-<body class="h-full font-body bg-mist-50">
-    <?php require __DIR__ . '/../' . $viewPath; ?>
-</body>
-</html>
+<?php if ($page === 'login' || $page === 'forgot_password' || $page === 'reset_password'): ?>
+<?php require __DIR__ . '/../' . $viewPath; ?>
 <?php return; endif; ?>
 
 <body class="h-full font-body text-mist-900 bg-mist-50">
