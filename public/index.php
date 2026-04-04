@@ -372,21 +372,34 @@ if ($method === 'POST' && $uri === '/login') {
         exit;
     }
 
-    // Look up by email first, then phone
-    if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    // Look up by email or phone — strict validation per mode
+    if ($email !== '') {
+        // Email mode: must be a valid email address
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $pageController->loginPage('Please enter a valid email address.');
+            exit;
+        }
         $stmt = $pdo->prepare(
             'SELECT u.id, u.full_name, u.password_hash, u.role_id, r.name AS role_name
              FROM users u INNER JOIN roles r ON r.id = u.role_id
              WHERE u.email = :email AND u.is_active = 1 LIMIT 1'
         );
         $stmt->execute([':email' => $email]);
-    } else {
+    } elseif ($phone !== '') {
+        // Phone mode: must contain only digits, +, spaces, dashes
+        if (!preg_match('/^[+0-9\s\-]+$/', $phone)) {
+            $pageController->loginPage('Please enter a valid phone number.');
+            exit;
+        }
         $stmt = $pdo->prepare(
             'SELECT u.id, u.full_name, u.password_hash, u.role_id, r.name AS role_name
              FROM users u INNER JOIN roles r ON r.id = u.role_id
              WHERE u.phone = :phone AND u.is_active = 1 LIMIT 1'
         );
-        $stmt->execute([':phone' => $identifier]);
+        $stmt->execute([':phone' => $phone]);
+    } else {
+        $pageController->loginPage('Email or phone number is required.');
+        exit;
     }
     $user = $stmt->fetch();
 

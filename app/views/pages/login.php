@@ -487,7 +487,7 @@ $cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
                                 <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/>
                             </svg>
                             <input type="email" id="email" name="email" class="field-input"
-                                   placeholder="you@example.com" autocomplete="email" required>
+                                   placeholder="you@example.com" autocomplete="email" inputmode="email" required>
                         </div>
                     </div>
 
@@ -499,7 +499,8 @@ $cn = htmlspecialchars($churchName ?? 'Church CMS', ENT_QUOTES, 'UTF-8');
                                 <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
                             </svg>
                             <input type="tel" id="phone" name="phone" class="field-input"
-                                   placeholder="+255 7XX XXX XXX" autocomplete="tel">
+                                   placeholder="+255 7XX XXX XXX" autocomplete="tel"
+                                   inputmode="tel" pattern="[+0-9\s\-]*">
                         </div>
                     </div>
 
@@ -565,6 +566,11 @@ function switchLogin(mode) {
     }
 }
 switchLogin('email');
+
+/* ── Phone field: allow only digits, +, space, dash ── */
+document.getElementById('phone').addEventListener('input', function () {
+    this.value = this.value.replace(/[^0-9+\s\-]/g, '');
+});
 
 /* ── Show / Hide password ── */
 function togglePw() {
